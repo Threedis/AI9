@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Automater</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB;
+    --blue-dark:#1D4ED8;
+    --green:#16A34A;
+    --amber:#F59E0B;
+    --red:#DC2626;
+    --brown:#B08252;
+    --slate:#64748B;
+    --navy:#0F172A;
+    --navy-2:#16213E;
+    --bg:#F5F7FB;
+    --card:#FFFFFF;
+    --border:#E5E9F0;
+    --text:#0F172A;
+    --text-soft:#64748B;
+    --font:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    min-height:100vh;
+  }
+
+  /* ================= SIDEBAR ================= */
+  .sidebar{
+    background:var(--navy);
+    color:#CBD5E1;
+    padding:24px 16px;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+    max-height:100vh;
+    position:sticky;
+    top:0;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:4px 8px 22px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    margin-bottom:18px;
+  }
+  .brand-icon{
+    width:34px;height:34px;
+    background:linear-gradient(135deg, var(--blue), #4F7CF6);
+    border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 6px 14px -6px rgba(37,99,235,.6);
+  }
+  .brand-text .t1{font-size:13px;font-weight:700;color:#fff;line-height:1.2;}
+  .brand-text .t2{font-size:10.5px;color:#8B98AC;}
+
+  .navlabel{
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#5C6B84;
+    padding:14px 10px 6px;
+    font-weight:700;
+  }
+  .nav{list-style:none;margin:0;padding:0;}
+  .nav li a{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 12px;
+    border-radius:7px;
+    color:#B7C2D6;
+    text-decoration:none;
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:2px;
+    transition:background .15s, color .15s;
+    cursor:pointer;
+  }
+  .nav li a .ic{
+    width:18px;height:18px;flex-shrink:0;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .nav li a:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .nav li a.active{background:var(--blue); color:#fff;}
+  .nav li a.done{color:#6EE7B7;}
+  .nav li a.done .ic{color:#6EE7B7;}
+
+  .sidebar-foot{
+    margin-top:auto;
+    padding:14px 10px 4px;
+    font-size:10.5px;
+    color:#5C6B84;
+    border-top:1px solid rgba(255,255,255,0.08);
+    line-height:1.6;
+  }
+
+  .steps{list-style:none;margin:0;padding:2px 6px 4px;}
+  .step{
+    display:grid;
+    grid-template-columns:24px 1fr;
+    gap:10px;
+    padding-bottom:16px;
+    position:relative;
+  }
+  .step:not(:last-child)::before{
+    content:"";
+    position:absolute;
+    left:11px; top:24px; bottom:0;
+    width:1px;
+    background:rgba(255,255,255,0.12);
+  }
+  .step-num{
+    width:22px;height:22px;
+    border:1px solid var(--blue);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;
+    font-weight:700;
+    color:#fff;
+    background:rgba(37,99,235,0.25);
+    flex-shrink:0;
+  }
+  .step h4{
+    margin:1px 0 4px;
+    font-size:12px;
+    font-weight:600;
+    color:#EAEFF7;
+  }
+  .step p{
+    margin:0;
+    font-size:11px;
+    line-height:1.5;
+    color:#8B98AC;
+  }
+
+  /* ================= MAIN ================= */
+  .main{padding:26px 34px 60px;}
+
+  .brand-banner{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:22px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand-title{
+    font-size:26px;
+    font-weight:800;
+    color:var(--text);
+    letter-spacing:-.01em;
+  }
+  .brand-sub{font-size:13px; color:var(--text-soft); font-weight:500;}
+
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .pill{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12.5px;
+    color:var(--text-soft);
+    font-weight:500;
+  }
+
+  /* ---- section panel ---- */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-left:4px solid var(--blue);
+    border-radius:12px;
+    padding:22px 24px;
+    margin-bottom:22px;
+  }
+  .panel.c-green{border-left-color:var(--green);}
+  .panel.c-amber{border-left-color:var(--amber);}
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .panel-head h2{font-size:15.5px;font-weight:700;margin:0;}
+  .panel-head .tag{
+    font-size:11px;color:var(--text-soft);
+    background:#F1F5F9;padding:4px 10px;border-radius:20px;font-weight:600;
+  }
+
+  .inline-step{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .step-chip{
+    background:var(--blue);
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.03em;
+    padding:4px 10px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+  .inline-step-txt{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-soft);
+  }
+
+  .drop-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-bottom:20px;
+  }
+  .dropzone{
+    border:1.5px dashed #C9D3E0;
+    background:#FAFBFD;
+    border-radius:10px;
+    padding:26px 18px;
+    text-align:center;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--blue); background:#EFF4FE;}
+  .dropzone.filled{border-style:solid; border-color:var(--green); background:#F0FBF4;}
+  .dz-tag{
+    display:inline-block;
+    font-size:11px;font-weight:700;color:var(--blue);
+    text-transform:uppercase; letter-spacing:.04em;
+    margin-bottom:10px;
+  }
+  .dz-main{font-size:13.5px;font-weight:600;margin-bottom:3px;}
+  .dz-sub{font-size:11.5px;color:var(--text-soft);}
+  .dz-file{
+    margin-top:10px;
+    font-size:11.5px;
+    color:var(--green);
+    font-weight:600;
+    word-break:break-all;
+  }
+  input[type=file]{display:none;}
+  .dropzone input[type=file]{display:none;}
+
+  .btn{
+    font-family:var(--font);
+    font-weight:700;
+    font-size:13.5px;
+    padding:10px 20px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:all .15s ease;
+  }
+  .btn-primary{background:var(--blue); color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--blue-dark);}
+  .btn-primary:disabled{background:#B7C2D6; cursor:not-allowed;}
+  .btn-green{background:var(--green); color:#fff;}
+  .btn-green:hover{background:#128A3E;}
+  .status{font-size:12.5px; color:var(--text-soft); margin-top:10px;}
+  .status.ok{color:var(--green); font-weight:600;}
+  .status.err{color:var(--red); font-weight:600;}
+
+  /* summary table */
+  table.preview{width:100%; border-collapse:collapse; font-size:12px;}
+  table.preview th{
+    text-align:center; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--text-soft); border-bottom:2px solid var(--border);
+    padding:8px 10px; background:#FAFBFD; white-space:normal; line-height:1.5;
+  }
+  table.preview td{padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; text-align:center;}
+  table.preview td.name{text-align:left; font-weight:600; white-space:nowrap;}
+  table.preview tr:hover td{background:#F8FAFD;}
+  .badge{display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700;}
+  .badge.si{background:#EFF4FE; color:var(--blue-dark);}
+  .badge.hr{background:#FEF3E2; color:#92400E;}
+
+  .empty-preview{
+    padding:30px 10px;
+    text-align:center;
+    color:var(--text-soft);
+    font-size:13px;
+  }
+
+  .notes-list{display:flex; flex-direction:column; gap:10px;}
+  .note-item{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    background:#FFFBEB; border:1.5px solid var(--amber); color:#92400E;
+    border-radius:8px; padding:12px 16px; font-size:12.5px; line-height:1.6;
+  }
+  .note-item .txt strong{color:#78350F;}
+  .note-item .ot-input{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; flex-shrink:0;}
+  .note-item input{
+    width:56px; padding:7px 9px; border:1.5px solid var(--amber); border-radius:6px; font-size:13px;
+    text-align:center; font-weight:700; font-family:var(--font);
+  }
+
+  .log{
+    background:var(--navy); border:1px solid var(--navy-2); border-radius:10px; padding:14px 18px;
+    font-size:12.5px; margin-top:14px; max-height:280px; overflow-y:auto;
+    font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; line-height:1.85; color:#CBD5E1;
+  }
+  .log .ok{color:#6EE7B7;}
+  .log .warn{color:#FCD34D;}
+  .log::before{content:'$ reconcile.run()'; display:block; color:#5C6B84; margin-bottom:8px;}
+
+  .legend{display:flex; gap:18px; font-size:12.5px; color:var(--text-soft); margin-top:18px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:18px; font-weight:600;}
+  .swatch{display:inline-block; width:13px; height:13px; border-radius:4px; margin-right:7px; vertical-align:-2px; border:1px solid rgba(0,0,0,.08);}
+
+  .hidden{display:none;}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .drop-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="brand-text">
+        <div class="t1">Attendance</div>
+        <div class="t2">Automater</div>
+      </div>
+    </div>
+
+    <div class="navlabel">Main</div>
+    <ul class="nav">
+      <li><a class="active" id="navUpload"><span class="ic">&#x2B06;</span> Upload &amp; Compare</a></li>
+      <li><a id="navDiff"><span class="ic">&#x2195;</span> Differences</a></li>
+      <li><a id="navNotes"><span class="ic">&#x1F4CB;</span> Approval Notes</a></li>
+      <li><a id="navReconcile"><span class="ic">&#x21BB;</span> Reconcile &amp; Download</a></li>
+    </ul>
+
+    <div class="navlabel">How to Use</div>
+    <ol class="steps">
+      <li class="step">
+        <span class="step-num">1</span>
+        <div>
+          <h4>Upload both files</h4>
+          <p>Drop the Site Incharge (SI) attendance Excel and the HR version into the two boxes.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-num">2</span>
+        <div>
+          <h4>Compare</h4>
+          <p>Every mismatched day cell and summary total between the two files is listed for review.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-num">3</span>
+        <div>
+          <h4>Review approval notes</h4>
+          <p>Notes found in the SI file are auto-matched to employees with an editable approved-OT count.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-num">4</span>
+        <div>
+          <h4>Reconcile</h4>
+          <p>Spare OT is spent against Absent days &mdash; PP&rarr;P or WP&rarr;WO &mdash; capped at 26 PR days.</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-num">5</span>
+        <div>
+          <h4>Download</h4>
+          <p>A two-sheet workbook &mdash; Modified (formula-driven, color-coded) and the original HR sheet.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="sidebar-foot">Runs entirely in your browser. No files are uploaded to a server.</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="brand-banner">
+      <div class="brand-title">Attendance Automater</div>
+      <div class="brand-sub">Reconcile SI vs HR attendance and generate a formula-driven Excel</div>
+    </div>
+
+    <!-- UPLOAD & COMPARE -->
+    <div class="panel" id="uploadPanel">
+      <div class="panel-head">
+        <h2>Upload &amp; Compare</h2>
+        <span class="tag">Step 1&ndash;2</span>
+      </div>
+
+      <div class="inline-step">
+        <span class="step-chip">Step 1</span>
+        <span class="inline-step-txt">Drop the SI and HR attendance files</span>
+      </div>
+      <div class="drop-grid">
+        <div class="dropzone" id="dropSI">
+          <span class="dz-tag">Site Incharge</span>
+          <div class="dz-main">SI attendance file</div>
+          <div class="dz-sub">Drop or click to choose .xlsx</div>
+        </div>
+        <div class="dropzone" id="dropHR">
+          <span class="dz-tag">HR</span>
+          <div class="dz-main">HR attendance file</div>
+          <div class="dz-sub">Drop or click to choose .xlsx</div>
+        </div>
+      </div>
+      <input type="file" id="fileSI" accept=".xlsx,.xls">
+      <input type="file" id="fileHR" accept=".xlsx,.xls">
+
+      <div class="inline-step">
+        <span class="step-chip">Step 2</span>
+        <span class="inline-step-txt">Compare every day cell and summary total</span>
+      </div>
+      <button class="btn btn-primary" id="compareBtn" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Compare files
+      </button>
+      <div class="status" id="statusCompare"></div>
+    </div>
+
+    <!-- DIFFERENCES -->
+    <div class="panel hidden" id="diffCard">
+      <div class="panel-head">
+        <h2>Differences Found</h2>
+        <span class="tag">Step 2 result</span>
+      </div>
+      <div id="diffSummary" style="font-size:13px; color:var(--text-soft); margin-bottom:6px; font-weight:600;"></div>
+      <div style="overflow-x:auto;"><table class="preview" id="diffTable"></table></div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="panel c-amber hidden" id="notesCard">
+      <div class="panel-head">
+        <h2>Detected Approval Notes</h2>
+        <span class="tag">Step 3</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
+        Notes found in the SI file, matched to an employee. If a note already accounts for some approved
+        OT, that amount is excluded from reconciliation for that employee &mdash; adjust the number if needed.
+      </p>
+      <div class="notes-list" id="notesList"></div>
+    </div>
+
+    <!-- RECONCILE -->
+    <div class="panel c-green hidden" id="reconcileCard">
+      <div class="panel-head">
+        <h2>Reconcile &amp; Download</h2>
+        <span class="tag">Step 4&ndash;5</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 14px; line-height:1.6;">
+        For every employee's <b>A</b> day, one spare OT cell (<b>PP</b>, or <b>WP</b> if no PP is left) is
+        spent to convert it to present &mdash; PP&rarr;P, or WP&rarr;WO (never WP&rarr;P, which would inflate
+        PR&nbsp;DAYS). PR&nbsp;DAYS is capped at 26/month. Employees with an approval note only get adjusted
+        beyond the noted amount.
+      </p>
+      <button class="btn btn-primary" id="reconcileBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Run reconciliation
+      </button>
+      <div class="log hidden" id="reconcileLog"></div>
+      <button class="btn btn-green hidden" id="downloadBtn" style="margin-top:14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download Excel (Modified + HR)
+      </button>
+      <div class="legend">
+        <span><span class="swatch" style="background:#c6efce;"></span>WO</span>
+        <span><span class="swatch" style="background:#ffeb9c;"></span>PP</span>
+        <span><span class="swatch" style="background:#ffc7ce;"></span>A</span>
+        <span><span class="swatch" style="background:#d2b48c;"></span>WP</span>
+      </div>
+    </div>
+
+    <!-- FINAL MODIFIED ATTENDANCE PREVIEW -->
+    <div class="panel hidden" id="previewCard">
+      <div class="panel-head">
+        <h2>Final Modified Attendance</h2>
+        <span class="tag" id="previewTag">Modified sheet</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
+        Shown in the same layout as the Attendance Sheet template &mdash; day-by-day status per
+        employee, with PR&nbsp;DAYS / WO&nbsp;&amp;&nbsp;FH&nbsp;&amp;&nbsp;WP / AB&nbsp;DAYS /
+        OT&nbsp;DAYS / MONTH&nbsp;DAYS totals recomputed from the final codes.
+      </p>
+      <div style="overflow-x:auto;"><table class="preview" id="previewTable"></table></div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#c6efce;"></span>WO</span>
+        <span><span class="swatch" style="background:#ffeb9c;"></span>PP</span>
+        <span><span class="swatch" style="background:#ffc7ce;"></span>A</span>
+        <span><span class="swatch" style="background:#d2b48c;"></span>WP</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const dropSI = document.getElementById('dropSI');
+const dropHR = document.getElementById('dropHR');
+const fileSI = document.getElementById('fileSI');
+const fileHR = document.getElementById('fileHR');
+const compareBtn = document.getElementById('compareBtn');
+const statusCompare = document.getElementById('statusCompare');
+const diffCard = document.getElementById('diffCard');
+const diffSummary = document.getElementById('diffSummary');
+const diffTable = document.getElementById('diffTable');
+const notesCard = document.getElementById('notesCard');
+const notesList = document.getElementById('notesList');
+const reconcileCard = document.getElementById('reconcileCard');
+const previewCard = document.getElementById('previewCard');
+const previewTable = document.getElementById('previewTable');
+const reconcileBtn = document.getElementById('reconcileBtn');
+const reconcileLog = document.getElementById('reconcileLog');
+const downloadBtn = document.getElementById('downloadBtn');
+
+let siData = null, hrData = null;   // parsed sheet structures
+let notesByEmployee = {};           // name -> approvedOT count (editable)
+let finalModified = null;           // reconciled sheet structure, built at reconcile time
+
+function setupDrop(dropEl, inputEl, onLoaded){
+  dropEl.addEventListener('click', () => inputEl.click());
+  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('filled'); });
+  dropEl.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if(f) loadFile(f, dropEl, onLoaded);
+  });
+  inputEl.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if(f) loadFile(f, dropEl, onLoaded);
+  });
+}
+
+function loadFile(file, dropEl, onLoaded){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+    const sheetName = wb.SheetNames.includes('Actual') ? 'Actual' : wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+    dropEl.classList.add('filled');
+    dropEl.querySelector('.dz-main').textContent = file.name;
+    onLoaded(parseSheet(rows));
+    checkReady();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function checkReady(){
+  compareBtn.disabled = !(siData && hrData);
+  if(siData || hrData) markStep(1, siData && hrData ? 'done' : 'active');
+}
+
+const NAV_MAP = { 1:'navUpload', 2:'navUpload', 3:'navNotes', 4:'navReconcile', 5:'navReconcile' };
+function markStep(n, state){
+  const pill = document.getElementById('stepPill' + n);
+  if(pill){
+    pill.classList.remove('active','done');
+    if(state) pill.classList.add(state);
+  }
+  const navId = NAV_MAP[n];
+  if(navId){
+    const navEl = document.getElementById(navId);
+    if(navEl){
+      document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+      navEl.classList.remove('done');
+      if(state === 'done') navEl.classList.add('done');
+      else navEl.classList.add('active');
+    }
+  }
+  if(n === 2 && state === 'done'){
+    const navDiff = document.getElementById('navDiff');
+    if(navDiff) navDiff.classList.add('done');
+  }
+}
+
+setupDrop(dropSI, fileSI, (parsed) => { siData = parsed; });
+setupDrop(dropHR, fileHR, (parsed) => { hrData = parsed; });
+
+document.getElementById('navUpload').addEventListener('click', () => document.getElementById('uploadPanel').scrollIntoView({behavior:'smooth'}));
+document.getElementById('navDiff').addEventListener('click', () => document.getElementById('diffCard').scrollIntoView({behavior:'smooth'}));
+document.getElementById('navNotes').addEventListener('click', () => document.getElementById('notesCard').scrollIntoView({behavior:'smooth'}));
+document.getElementById('navReconcile').addEventListener('click', () => document.getElementById('reconcileCard').scrollIntoView({behavior:'smooth'}));
+
+// ---------- Parse a raw row-array into a structured sheet ----------
+function parseSheet(rows){
+  const DAY_START = 5; // column F, 0-indexed
+  // count day columns from header row (row index 1)
+  const headerRow = rows[1] || [];
+  let numDays = 0;
+  for(let c = DAY_START; c < headerRow.length; c++){
+    if(headerRow[c] !== null && headerRow[c] !== undefined && headerRow[c] !== '') numDays++;
+    else break;
+  }
+  const spacerIdx = DAY_START + numDays;
+  const prIdx = spacerIdx + 1, woIdx = spacerIdx + 2, tourIdx = spacerIdx + 3,
+        abIdx = spacerIdx + 4, otIdx = spacerIdx + 5, monthIdx = spacerIdx + 6, remarksIdx = spacerIdx + 7;
+
+  // detect employee rows starting at row index 2 (row 3), while column C (idx2) is non-empty
+  const employees = [];
+  let r = 2;
+  while(rows[r] && rows[r][2]){
+    const row = rows[r];
+    employees.push({
+      rowIdx: r,
+      sn: row[0], code: row[1], name: row[2], designation: row[3], doj: row[4],
+      days: row.slice(DAY_START, DAY_START + numDays).map(v => v === null || v === undefined ? '' : String(v).trim()),
+      pr: row[prIdx], wo: row[woIdx], tour: row[tourIdx], ab: row[abIdx], ot: row[otIdx], month: row[monthIdx],
+      remarks: row[remarksIdx]
+    });
+    r++;
+  }
+  const lastEmpIdx = r - 1;
+  const presentDayRowIdx = lastEmpIdx + 2; // skip one blank row
+  const otRowIdx = presentDayRowIdx + 1;
+  const manpowerRowIdx = presentDayRowIdx + 2;
+
+  // side panel rows (project info), just carried through as-is: rows presentDayRowIdx..manpowerRowIdx+1, cols A-E
+  const sidePanel = [];
+  for(let rr = presentDayRowIdx; rr <= manpowerRowIdx + 1; rr++){
+    if(rows[rr]) sidePanel.push({ rowIdx: rr, cols: rows[rr].slice(0,5) });
+  }
+
+  // scan for note text anywhere below manpower rows
+  const notes = [];
+  for(let rr = manpowerRowIdx + 1; rr < rows.length; rr++){
+    const row = rows[rr];
+    if(!row) continue;
+    for(let c = 0; c < row.length; c++){
+      const v = row[c];
+      if(typeof v === 'string' && /note\s*:?-/i.test(v)){
+        notes.push(v);
+      }
+    }
+  }
+
+  return { rows, numDays, DAY_START, spacerIdx, prIdx, woIdx, tourIdx, abIdx, otIdx, monthIdx, remarksIdx,
+           employees, presentDayRowIdx, otRowIdx, manpowerRowIdx, sidePanel, notes };
+}
+
+// ---------- Compare ----------
+compareBtn.addEventListener('click', () => {
+  markStep(1, 'done');
+  markStep(2, 'active');
+  statusCompare.textContent = 'Comparing...';
+  const diffs = [];
+  const byNameHR = {};
+  hrData.employees.forEach(e => byNameHR[e.name] = e);
+
+  siData.employees.forEach(siEmp => {
+    const hrEmp = byNameHR[siEmp.name];
+    if(!hrEmp){
+      diffs.push({ name: siEmp.name, day: '—', si: '(missing in HR)', hr: '' });
+      return;
+    }
+    for(let d = 0; d < siEmp.days.length; d++){
+      const sv = siEmp.days[d] || '';
+      const hv = (hrEmp.days[d] || '');
+      if(sv !== hv){
+        diffs.push({ name: siEmp.name, day: d+1, si: sv || '(blank)', hr: hv || '(blank)' });
+      }
+    }
+    ['pr','wo','tour','ab','ot','month'].forEach(k => {
+      if((siEmp[k] ?? '') !== (hrEmp[k] ?? '')){
+        diffs.push({ name: siEmp.name, day: k.toUpperCase()+' total', si: siEmp[k], hr: hrEmp[k] });
+      }
+    });
+  });
+
+  renderDiffTable(diffs);
+  detectNotes();
+  diffCard.classList.remove('hidden');
+  notesCard.classList.remove('hidden');
+  reconcileCard.classList.remove('hidden');
+  markStep(2, 'done');
+  markStep(3, 'active');
+  statusCompare.textContent = `Done — ${diffs.length} difference(s) found.`;
+});
+
+function renderDiffTable(diffs){
+  if(diffs.length === 0){
+    diffSummary.textContent = 'No differences — SI and HR files match exactly.';
+    diffTable.innerHTML = '';
+    return;
+  }
+  diffSummary.textContent = `${diffs.length} difference(s) between SI and HR:`;
+  let html = '<tr><th>Employee</th><th>Day</th><th>SI value</th><th>HR value</th></tr>';
+  diffs.forEach(d => {
+    html += `<tr class="diffrow"><td class="name">${d.name}</td><td>${d.day}</td>
+      <td><span class="badge si">SI</span> ${d.si}</td><td><span class="badge hr">HR</span> ${d.hr}</td></tr>`;
+  });
+  diffTable.innerHTML = html;
+}
+
+// ---------- Detect approval notes and match to employees ----------
+function detectNotes(){
+  notesByEmployee = {};
+  const names = siData.employees.map(e => e.name);
+  siData.notes.forEach(noteText => {
+    names.forEach(name => {
+      const lastName = name.split(' ').pop();
+      // match if any significant word from the employee's name appears in the note
+      const nameWords = name.split(' ').filter(w => w.length > 3);
+      const hit = nameWords.some(w => noteText.toUpperCase().includes(w.toUpperCase()));
+      if(hit){
+        if(!notesByEmployee[name]) notesByEmployee[name] = { text: noteText, approvedOT: 1 };
+      }
+    });
+  });
+  renderNotes();
+}
+
+function renderNotes(){
+  const names = Object.keys(notesByEmployee);
+  if(names.length === 0){
+    notesList.innerHTML = '<div style="font-size:13px;color:var(--muted);">No approval notes detected.</div>';
+    return;
+  }
+  notesList.innerHTML = '';
+  names.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'note-item';
+    div.innerHTML = `
+      <div class="txt"><strong>${name}</strong> — ${notesByEmployee[name].text}</div>
+      <div>Approved OT: <input type="number" min="0" value="${notesByEmployee[name].approvedOT}" data-name="${name}"></div>
+    `;
+    div.querySelector('input').addEventListener('input', (e) => {
+      notesByEmployee[name].approvedOT = parseInt(e.target.value || '0', 10);
+    });
+    notesList.appendChild(div);
+  });
+}
+
+// ---------- Reconcile ----------
+reconcileBtn.addEventListener('click', () => {
+  markStep(3, 'done');
+  markStep(4, 'active');
+  const logLines = [];
+  const numDays = siData.numDays;
+
+  const modifiedEmployees = siData.employees.map(emp => {
+    const days = emp.days.slice();
+    const aPositions = [];
+    for(let i = 0; i < days.length; i++) if(days[i] === 'A') aPositions.push(i);
+
+    let pr = Number(emp.pr) || 0;
+    let ab = Number(emp.ab) || 0;
+    let ot = Number(emp.ot) || 0;
+
+    if(aPositions.length === 0){
+      return { ...emp, days };
+    }
+
+    const note = notesByEmployee[emp.name];
+    const usableOT = note ? Math.max(0, ot - note.approvedOT) : ot;
+    const roomTo26 = Math.max(0, 26 - pr);
+    const adjustCount = Math.min(aPositions.length, usableOT, roomTo26);
+
+    if(adjustCount === 0){
+      logLines.push(`<span class="warn">${emp.name}: no adjustment (available OT=${usableOT}${note ? ' after note' : ''}, room to 26=${roomTo26}, A count=${aPositions.length})</span>`);
+      return { ...emp, days };
+    }
+
+    aPositions.slice(0, adjustCount).forEach(pos => { days[pos] = 'P'; });
+
+    let spent = 0;
+    for(let i = 0; i < days.length && spent < adjustCount; i++){
+      if(days[i] === 'PP'){ days[i] = 'P'; spent++; }
+    }
+    let wpUsedDays = [];
+    for(let i = 0; i < days.length && spent < adjustCount; i++){
+      if(days[i] === 'WP'){ days[i] = 'WO'; spent++; wpUsedDays.push(i+1); }
+    }
+
+    logLines.push(`<span class="ok">${emp.name}: converted ${adjustCount} 'A' day(s) (day ${aPositions.slice(0,adjustCount).map(p=>p+1).join(', ')}) to P, spent ${spent} OT credit(s)${wpUsedDays.length ? ` (incl. WP→WO on day ${wpUsedDays.join(', ')})` : ''}.</span>`);
+    if(note) logLines.push(`  &nbsp;&nbsp;↳ note on file excluded ${note.approvedOT} pre-approved OT day(s) from this employee's adjustment.`);
+
+    return { ...emp, days };
+  });
+
+  finalModified = { ...siData, employees: modifiedEmployees };
+
+  reconcileLog.innerHTML = logLines.join('<br>');
+  reconcileLog.classList.remove('hidden');
+  downloadBtn.classList.remove('hidden');
+  renderFinalPreview(finalModified);
+  previewCard.classList.remove('hidden');
+  markStep(4, 'done');
+  markStep(5, 'active');
+});
+
+// ---------- Render final modified attendance in the Attendance Sheet template layout ----------
+function renderFinalPreview(sheetData){
+  const { employees, numDays } = sheetData;
+
+  function countif(arr, val){ return arr.filter(v => v === val).length; }
+  function computeTotals(days){
+    const pr = countif(days,'P') + countif(days,'PP');
+    const wo = countif(days,'WO') + countif(days,'WP');
+    const tour = countif(days,'T');
+    const ab = countif(days,'A') + countif(days,'L');
+    const ot = countif(days,'PP') + countif(days,'WP');
+    const month = pr + wo + tour + ab;
+    return { pr, wo, tour, ab, ot, month };
+  }
+
+  let html = '<tr><th>SN</th><th>Emp Code</th><th style="text-align:left;">Name</th><th>Desig.</th>';
+  for(let d = 1; d <= numDays; d++) html += `<th>${d}</th>`;
+  html += '<th>PR</th><th>WO&nbsp;&amp;<br>FH&amp;WP</th><th>TOUR</th><th>AB</th><th>OT</th><th>MONTH</th></tr>';
+
+  employees.forEach((emp, i) => {
+    const t = computeTotals(emp.days);
+    html += `<tr><td>${i+1}</td><td>${emp.code || ''}</td><td class="name">${emp.name}</td><td>${emp.designation || ''}</td>`;
+    emp.days.forEach(v => {
+      let bg = '';
+      if(v === 'WO') bg = '#c6efce';
+      else if(v === 'PP') bg = '#ffeb9c';
+      else if(v === 'A') bg = '#ffc7ce';
+      else if(v === 'WP') bg = '#d2b48c';
+      html += `<td style="background:${bg}; font-weight:${v ? 600 : 400};">${v || ''}</td>`;
+    });
+    html += `<td style="font-weight:700;">${t.pr}</td><td>${t.wo}</td><td>${t.tour}</td><td style="font-weight:700; color:${t.ab>0?'var(--red)':'inherit'};">${t.ab}</td><td>${t.ot}</td><td>${t.month}</td></tr>`;
+  });
+
+  previewTable.innerHTML = html;
+}
+
+// ---------- Build & download Excel ----------
+downloadBtn.addEventListener('click', async () => {
+  downloadBtn.disabled = true;
+  downloadBtn.textContent = 'Building...';
+  try{
+    await buildWorkbook();
+  }catch(err){
+    console.error(err);
+    alert('Could not build the Excel file: ' + err.message);
+  }finally{
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = 'Download Excel (Modified + HR)';
+  }
+});
+
+const GREEN = 'FFC6EFCE', YELLOW = 'FFFFEB9C', RED = 'FFFFC7CE', BROWN = 'FFD2B48C';
+
+function writeSheet(ws, sheetData){
+  const { rows, numDays, DAY_START, employees, presentDayRowIdx, otRowIdx, manpowerRowIdx, sidePanel } = sheetData;
+  const colLetter = (idx0) => ExcelJS.utils ? null : null; // unused, we compute manually below
+
+  function colName(idx0){ // 0-indexed column -> Excel letters
+    let n = idx0 + 1, s = '';
+    while(n > 0){ const m = (n - 1) % 26; s = String.fromCharCode(65+m) + s; n = Math.floor((n-1)/26); }
+    return s;
+  }
+
+  // header rows (1 and 2) copied as-is
+  [0,1].forEach(rIdx => {
+    const row = rows[rIdx] || [];
+    row.forEach((v, c) => { if(v !== null && v !== undefined && v !== '') ws.getCell(rIdx+1, c+1).value = v; });
+  });
+  ws.getRow(1).font = { bold: true };
+  ws.getRow(2).font = { bold: true };
+
+  const dayEnd0 = DAY_START + numDays - 1; // 0-indexed last day col
+  const dayStartLetter = colName(DAY_START), dayEndLetter = colName(dayEnd0);
+
+  employees.forEach((emp, i) => {
+    const r = emp.rowIdx + 1; // 1-indexed excel row
+    ws.getCell(r, 1).value = emp.sn;
+    ws.getCell(r, 2).value = emp.code;
+    ws.getCell(r, 3).value = emp.name;
+    ws.getCell(r, 4).value = emp.designation;
+    ws.getCell(r, 5).value = emp.doj;
+    for(let d = 0; d < numDays; d++){
+      const cell = ws.getCell(r, DAY_START + d + 1);
+      const v = emp.days[d] || '';
+      cell.value = v;
+      cell.alignment = { horizontal: 'center' };
+      if(v === 'WO') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GREEN} };
+      else if(v === 'PP') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:YELLOW} };
+      else if(v === 'A') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:RED} };
+      else if(v === 'WP') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:BROWN} };
+    }
+    const rng = `${dayStartLetter}${r}:${dayEndLetter}${r}`;
+    ws.getCell(r, sheetData.prIdx+1).value = { formula: `COUNTIF(${rng},"P")+COUNTIF(${rng},"PP")` };
+    ws.getCell(r, sheetData.woIdx+1).value = { formula: `COUNTIF(${rng},"WO")+COUNTIF(${rng},"WP")` };
+    ws.getCell(r, sheetData.tourIdx+1).value = { formula: `COUNTIF(${rng},"T")` };
+    ws.getCell(r, sheetData.abIdx+1).value = { formula: `COUNTIF(${rng},"A")+COUNTIF(${rng},"L")` };
+    ws.getCell(r, sheetData.otIdx+1).value = { formula: `COUNTIF(${rng},"PP")+COUNTIF(${rng},"WP")+2*COUNTIF(${rng},"WPP")` };
+    const prCol = colName(sheetData.prIdx), abCol = colName(sheetData.abIdx);
+    ws.getCell(r, sheetData.monthIdx+1).value = { formula: `SUM(${prCol}${r}:${abCol}${r})` };
+  });
+
+  // totals rows: PRESENT DAY / OT / MANPOWER per day column
+  const presentR = presentDayRowIdx + 1, otR = otRowIdx + 1, manR = manpowerRowIdx + 1;
+  const firstEmpR = employees[0].rowIdx + 1, lastEmpR = employees[employees.length-1].rowIdx + 1;
+  for(let d = 0; d < numDays; d++){
+    const c = DAY_START + d + 1;
+    const cl = colName(DAY_START + d);
+    ws.getCell(presentR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"P")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")` };
+    ws.getCell(otR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WP")+2*COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WPP")` };
+    ws.getCell(manR, c).value = { formula: `SUM(${cl}${presentR}:${cl}${otR})` };
+  }
+  const spacerCol = colName(sheetData.spacerIdx);
+  ws.getCell(presentR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${presentR}:${dayEndLetter}${presentR})` };
+  ws.getCell(otR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${otR}:${dayEndLetter}${otR})` };
+  ws.getCell(manR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${manR}:${dayEndLetter}${manR})` };
+
+  const prCol = colName(sheetData.prIdx), woCol = colName(sheetData.woIdx), tourCol = colName(sheetData.tourIdx),
+        abCol = colName(sheetData.abIdx), otCol = colName(sheetData.otIdx), monthCol = colName(sheetData.monthIdx);
+  ws.getCell(presentR, sheetData.prIdx+1).value = { formula: `SUM(${prCol}${firstEmpR}:${prCol}${lastEmpR})` };
+  ws.getCell(presentR, sheetData.woIdx+1).value = { formula: `SUM(${woCol}${firstEmpR}:${woCol}${lastEmpR})` };
+  ws.getCell(presentR, sheetData.tourIdx+1).value = { formula: `SUM(${tourCol}${firstEmpR}:${tourCol}${lastEmpR})` };
+  ws.getCell(presentR, sheetData.abIdx+1).value = { formula: `SUM(${abCol}${firstEmpR}:${abCol}${lastEmpR})` };
+  ws.getCell(presentR, sheetData.otIdx+1).value = { formula: `SUM(${otCol}${firstEmpR}:${otCol}${lastEmpR})` };
+  ws.getCell(presentR, sheetData.monthIdx+1).value = { formula: `SUM(${monthCol}${firstEmpR}:${monthCol}${lastEmpR})` };
+
+  // side panel + any remaining rows below, copied as literal values (project info / notes)
+  for(let rr = presentDayRowIdx; rr < rows.length; rr++){
+    const row = rows[rr];
+    if(!row) continue;
+    row.forEach((v, c) => {
+      if(v === null || v === undefined || v === '') return;
+      const already = ws.getCell(rr+1, c+1).value;
+      if(already === null || already === undefined) ws.getCell(rr+1, c+1).value = v;
+    });
+  }
+
+  ws.columns.forEach((col, i) => {
+    if(i < 5) col.width = 16;
+    else if(i < DAY_START + numDays) col.width = 5;
+    else col.width = 11;
+  });
+  ws.getColumn(3).width = 24;
+}
+
+async function buildWorkbook(){
+  const workbook = new ExcelJS.Workbook();
+  const wsModified = workbook.addWorksheet('Modified');
+  const wsHR = workbook.addWorksheet('HR');
+
+  writeSheet(wsModified, finalModified);
+  writeSheet(wsHR, hrData);
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Attendance_Reconciled.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  markStep(5, 'done');
+}
+</script>
+</body>
+</html>
