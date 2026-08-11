@@ -853,15 +853,6 @@ function detectWOFlags(sheetData){
   employees.forEach((emp, empIndex) => {
     const days = emp.days;
 
-    // Rule 4 computed first so Rule 3 can avoid a redundant "insufficient data" flag on the same cell.
-    let dojFlagDay = null;
-    if(emp.doj instanceof Date){
-      const dojDay = emp.doj.getDate();
-      if(dojDay >= 1 && dojDay <= numDays && days[dojDay - 1] === 'WO'){
-        dojFlagDay = dojDay - 1;
-      }
-    }
-
     // Rule 3: WO should follow 6 days of work in that week. Flag if the 6 days
     // immediately before a WO show heavy absence and barely any work.
     for(let p = 0; p < days.length; p++){
@@ -869,7 +860,6 @@ function detectWOFlags(sheetData){
       const windowStart = Math.max(0, p - 6);
       const window = days.slice(windowStart, p);
       if(window.length < 6){
-        if(p === dojFlagDay) continue; // the DOJ flag below already explains this cell
         flags.push({
           empIndex, dayIndex: p, employeeName: emp.name,
           reason: `Only ${window.length} day(s) of data before this WO in the current month — check the previous month's attendance to confirm the 6-day rule.`
@@ -887,11 +877,14 @@ function detectWOFlags(sheetData){
     }
 
     // Rule 4: WO should not fall on the employee's date of joining.
-    if(dojFlagDay !== null){
-      flags.push({
-        empIndex, dayIndex: dojFlagDay, employeeName: emp.name,
-        reason: `Weekly-off falls on this employee's date of joining (day ${dojFlagDay + 1}) — new joiners typically shouldn't have a WO before working.`
-      });
+    if(emp.doj instanceof Date){
+      const dojDay = emp.doj.getDate();
+      if(dojDay >= 1 && dojDay <= numDays && days[dojDay - 1] === 'WO'){
+        flags.push({
+          empIndex, dayIndex: dojDay - 1, employeeName: emp.name,
+          reason: `Weekly-off falls on this employee's date of joining (day ${dojDay}) — new joiners typically shouldn't have a WO before working.`
+        });
+      }
     }
   });
 
