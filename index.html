@@ -851,6 +851,21 @@ function renderFinalPreview(sheetData){
     html += `<td style="font-weight:700;">${t.pr}</td><td>${t.wo}</td><td>${t.tour}</td><td style="font-weight:700; color:${t.ab>0?'var(--red)':'inherit'};">${t.ab}</td><td>${t.ot}</td><td>${t.month}</td></tr>`;
   });
 
+  // ---- Totals row: PR / WO&FH&WP / TOUR / AB / OT / MONTH summed across all employees ----
+  const grand = employees.reduce((acc, emp) => {
+    const t = computeTotals(emp.days);
+    acc.pr += t.pr; acc.wo += t.wo; acc.tour += t.tour; acc.ab += t.ab; acc.ot += t.ot; acc.month += t.month;
+    return acc;
+  }, { pr:0, wo:0, tour:0, ab:0, ot:0, month:0 });
+
+  html += `<tr style="background:#fdf6c9;"><td colspan="${4 + numDays}" style="text-align:right; font-weight:700; padding-right:14px;">TOTAL</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.pr}</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.wo}</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.tour}</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.ab}</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.ot}</td>` +
+    `<td style="font-weight:700; background:#ffeb9c;">${grand.month}</td></tr>`;
+
   previewTable.innerHTML = html;
 }
 
@@ -873,7 +888,7 @@ const GREEN = 'FFC6EFCE', YELLOW = 'FFFFEB9C', RED = 'FFFFC7CE', BROWN = 'FFD2B4
 
 function writeSheet(ws, sheetData){
   const { rows, numDays, DAY_START, employees, presentDayRowIdx, otRowIdx, manpowerRowIdx, sidePanel } = sheetData;
-  const colLetter = (idx0) => ExcelJS.utils ? null : null; // unused, we compute manually below
+  const HEADER_FILL = 'FF2F75B5';
 
   function colName(idx0){ // 0-indexed column -> Excel letters
     let n = idx0 + 1, s = '';
@@ -881,29 +896,63 @@ function writeSheet(ws, sheetData){
     return s;
   }
 
-  // header rows (1 and 2) copied as-is
-  [0,1].forEach(rIdx => {
-    const row = rows[rIdx] || [];
-    row.forEach((v, c) => { if(v !== null && v !== undefined && v !== '') ws.getCell(rIdx+1, c+1).value = v; });
-  });
-  ws.getRow(1).font = { bold: true };
-  ws.getRow(2).font = { bold: true };
-
   const dayEnd0 = DAY_START + numDays - 1; // 0-indexed last day col
   const dayStartLetter = colName(DAY_START), dayEndLetter = colName(dayEnd0);
+  const lastColIdx0 = sheetData.monthIdx; // last summary column (0-indexed)
+
+  // ---- Row 1: project title, merged A1:E1, centered + bold ----
+  const titleText = (rows[0] || []).slice(0,5).find(v => v !== null && v !== undefined && v !== '') || '';
+  ws.mergeCells(1, 1, 1, 5);
+  const titleCell = ws.getCell(1, 1);
+  titleCell.value = titleText;
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  titleCell.font = { bold: true, size: 11 };
+
+  // ---- Row 1 (day headers, "ddd") + Row 2 (SN/Code/... labels, day numbers "dd", summary labels) ----
+  // Row 2: full header row, all columns -- white bold text on orange-red fill
+  const row2Source = rows[1] || [];
+  for(let c = 0; c <= lastColIdx0; c++){
+    const cell = ws.getCell(2, c + 1);
+    let v = row2Source[c];
+    if(c >= DAY_START && c <= dayEnd0){
+      const dayNum = c - DAY_START + 1;
+      v = String(dayNum).padStart(2, '0'); // "dd"
+    }
+    if(v !== null && v !== undefined && v !== '') cell.value = v;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_FILL } };
+    cell.alignment = { horizontal: 'center' };
+  }
+  // Row 1, day-header columns onward: weekday abbreviation "ddd" -- white bold on orange-red fill
+  const row1Source = rows[0] || [];
+  for(let c = DAY_START; c <= lastColIdx0; c++){
+    const cell = ws.getCell(1, c + 1);
+    let v = row1Source[c];
+    if(c >= DAY_START && c <= dayEnd0 && typeof v === 'string'){
+      v = v.slice(0,3); // "ddd"
+    }
+    if(v !== null && v !== undefined && v !== '') cell.value = v;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_FILL } };
+    cell.alignment = { horizontal: 'center' };
+  }
 
   employees.forEach((emp, i) => {
     const r = emp.rowIdx + 1; // 1-indexed excel row
     ws.getCell(r, 1).value = emp.sn;
+    ws.getCell(r, 1).font = { name: 'Arial', size: 10 };
     ws.getCell(r, 2).value = emp.code;
     ws.getCell(r, 3).value = emp.name;
+    ws.getCell(r, 3).font = { name: 'Arial', size: 10 };
     ws.getCell(r, 4).value = emp.designation;
     ws.getCell(r, 5).value = emp.doj;
+    ws.getCell(r, 5).font = { name: 'Arial', size: 10 };
     for(let d = 0; d < numDays; d++){
       const cell = ws.getCell(r, DAY_START + d + 1);
       const v = emp.days[d] || '';
       cell.value = v;
       cell.alignment = { horizontal: 'center' };
+      cell.font = { name: 'Arial', size: 10 };
       if(v === 'WO') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GREEN} };
       else if(v === 'PP') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:YELLOW} };
       else if(v === 'A') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:RED} };
@@ -929,7 +978,6 @@ function writeSheet(ws, sheetData){
     ws.getCell(otR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WP")+2*COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WPP")` };
     ws.getCell(manR, c).value = { formula: `SUM(${cl}${presentR}:${cl}${otR})` };
   }
-  const spacerCol = colName(sheetData.spacerIdx);
   ws.getCell(presentR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${presentR}:${dayEndLetter}${presentR})` };
   ws.getCell(otR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${otR}:${dayEndLetter}${otR})` };
   ws.getCell(manR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${manR}:${dayEndLetter}${manR})` };
@@ -943,6 +991,14 @@ function writeSheet(ws, sheetData){
   ws.getCell(presentR, sheetData.otIdx+1).value = { formula: `SUM(${otCol}${firstEmpR}:${otCol}${lastEmpR})` };
   ws.getCell(presentR, sheetData.monthIdx+1).value = { formula: `SUM(${monthCol}${firstEmpR}:${monthCol}${lastEmpR})` };
 
+  // Highlight the PR/WO/TOUR/AB/OT/MONTH totals cells in yellow
+  const YELLOW_TOTAL = 'FFFFEB9C';
+  [sheetData.prIdx, sheetData.woIdx, sheetData.tourIdx, sheetData.abIdx, sheetData.otIdx, sheetData.monthIdx].forEach(idx0 => {
+    const cell = ws.getCell(presentR, idx0 + 1);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW_TOTAL } };
+    cell.font = { bold: true };
+  });
+
   // side panel + any remaining rows below, copied as literal values (project info / notes)
   for(let rr = presentDayRowIdx; rr < rows.length; rr++){
     const row = rows[rr];
@@ -954,12 +1010,62 @@ function writeSheet(ws, sheetData){
     });
   }
 
+  // ---- Merge "Shift Schedule" label across 2 columns (B:C on its row) ----
+  for(let rr = presentDayRowIdx; rr < rows.length; rr++){
+    const row = rows[rr];
+    if(!row) continue;
+    if(typeof row[1] === 'string' && row[1].trim().toLowerCase() === 'shift schedule'){
+      try{ ws.mergeCells(rr+1, 2, rr+1, 3); }catch(e){}
+      const cell = ws.getCell(rr+1, 2);
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.font = { bold: true };
+      break;
+    }
+  }
+
+  // ---- Merge "Note" text row across 3 columns (C:E on its row) ----
+  for(let rr = 0; rr < rows.length; rr++){
+    const row = rows[rr];
+    if(!row) continue;
+    for(let c = 0; c < row.length; c++){
+      if(typeof row[c] === 'string' && /note\s*:?-/i.test(row[c])){
+        try{ ws.mergeCells(rr+1, c+1, rr+1, c+3); }catch(e){}
+        const cell = ws.getCell(rr+1, c+1);
+        cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      }
+    }
+  }
+
+  // ---- Solid thin borders: full grid across the core table, value-only below it ----
+  const lastRowUsed = ws.lastRow ? ws.lastRow.number : (rows.length);
+  const lastColUsed = lastColIdx0 + 1;
+  const coreLastRow = manpowerRowIdx + 1; // 1-indexed row of the MANPOWER/DAY totals line
+  const THIN = { style: 'thin', color: { argb: 'FF000000' } };
+  for(let r = 1; r <= lastRowUsed; r++){
+    for(let c = 1; c <= lastColUsed; c++){
+      const cell = ws.getCell(r, c);
+      const inCore = r <= coreLastRow;
+      if(inCore || (cell.value !== null && cell.value !== undefined)){
+        cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+      }
+    }
+  }
+
+  // ---- Center-align every cell, auto-fit column width to content ----
   ws.columns.forEach((col, i) => {
-    if(i < 5) col.width = 16;
-    else if(i < DAY_START + numDays) col.width = 5;
-    else col.width = 11;
+    let maxLen = 4;
+    col.eachCell({ includeEmpty: false }, cell => {
+      cell.alignment = { ...cell.alignment, horizontal: cell.alignment?.horizontal || 'center', vertical: 'middle' };
+      let text = '';
+      if(cell.value && typeof cell.value === 'object' && cell.value.formula){
+        text = '000000'; // approximate width for computed numeric results
+      } else if(cell.value !== null && cell.value !== undefined){
+        text = String(cell.value);
+      }
+      maxLen = Math.max(maxLen, text.length);
+    });
+    col.width = Math.min(Math.max(maxLen + 2, i < 5 ? 10 : 5), i === 2 ? 26 : 20);
   });
-  ws.getColumn(3).width = 24;
 }
 
 async function buildWorkbook(){
