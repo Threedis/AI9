@@ -710,7 +710,9 @@ compareBtn.addEventListener('click', () => {
         diffs.push({ name: siEmp.name, day: d+1, si: sv || '(blank)', hr: hv || '(blank)' });
       }
     }
-    ['pr','wo','tour','ab','ot','month'].forEach(k => {
+    // Note: MONTH DAYS is intentionally excluded from this comparison — SI's MONTH DAYS
+    // and HR's PR+TOUR+OT-derived total aren't the same figure and shouldn't be diffed.
+    ['pr','wo','tour','ab','ot'].forEach(k => {
       if((siEmp[k] ?? '') !== (hrEmp[k] ?? '')){
         diffs.push({ name: siEmp.name, day: k.toUpperCase()+' total', si: siEmp[k], hr: hrEmp[k] });
       }
@@ -846,9 +848,35 @@ reconcileBtn.addEventListener('click', () => {
 });
 
 // ---------- Rule 3 & 4: flag questionable WO days for manual review ----------
+const MONTH_NAMES_LOWER = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+// Try to determine which calendar month/year this sheet actually represents,
+// so a DOJ's full date (not just its day-of-month) can be checked properly.
+function inferSheetMonthYear(sheetData){
+  const row2 = sheetData.rows[1] || [];
+  const firstDayCell = row2[sheetData.DAY_START];
+  if(firstDayCell instanceof Date){
+    return { month: firstDayCell.getMonth(), year: firstDayCell.getFullYear() };
+  }
+  for(const row of sheetData.rows){
+    if(!row) continue;
+    for(const cell of row){
+      if(typeof cell === 'string'){
+        const m = cell.match(/month\s*:?-?\s*([A-Za-z]+)[\s,]+(\d{4})/i);
+        if(m){
+          const idx = MONTH_NAMES_LOWER.indexOf(m[1].toLowerCase());
+          if(idx >= 0) return { month: idx, year: parseInt(m[2], 10) };
+        }
+      }
+    }
+  }
+  return null; // couldn't determine — be conservative, don't guess
+}
+
 function detectWOFlags(sheetData){
   const { employees, numDays } = sheetData;
   const flags = [];
+  const sheetMonthYear = inferSheetMonthYear(sheetData);
 
   employees.forEach((emp, empIndex) => {
     const days = emp.days;
@@ -876,10 +904,16 @@ function detectWOFlags(sheetData){
       }
     }
 
-    // Rule 4: WO should not fall on the employee's date of joining.
-    if(emp.doj instanceof Date){
+    // Rule 4: WO should not fall on the employee's date of joining — but this only makes
+    // sense if the DOJ's full date (day + month + year) actually falls within the month
+    // this sheet represents. A DOJ of 25-Nov-2024 sharing day-of-month 25 with an April
+    // 2026 sheet is not the same date and must NOT be flagged.
+    if(emp.doj instanceof Date && sheetMonthYear){
       const dojDay = emp.doj.getDate();
-      if(dojDay >= 1 && dojDay <= numDays && days[dojDay - 1] === 'WO'){
+      const dojMonth = emp.doj.getMonth();
+      const dojYear = emp.doj.getFullYear();
+      const sameMonth = dojMonth === sheetMonthYear.month && dojYear === sheetMonthYear.year;
+      if(sameMonth && dojDay >= 1 && dojDay <= numDays && days[dojDay - 1] === 'WO'){
         flags.push({
           empIndex, dayIndex: dojDay - 1, employeeName: emp.name,
           reason: `Weekly-off falls on this employee's date of joining (day ${dojDay}) — new joiners typically shouldn't have a WO before working.`
@@ -889,6 +923,7 @@ function detectWOFlags(sheetData){
   });
 
   return flags;
+
 }
 
 function renderWOReview(sheetData){
