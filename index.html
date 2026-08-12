@@ -467,8 +467,11 @@
         <span class="tag">Step 3</span>
       </div>
       <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
-        Notes found in the SI file, matched to an employee. If a note already accounts for some approved
-        OT, that amount is excluded from reconciliation for that employee &mdash; adjust the number if needed.
+        Notes found in the SI file, matched to the specific employee(s) they reference (by employee code
+        where given, e.g. "Emp Code-PBBAD19", otherwise by name) &mdash; a note never applies to everyone.
+        A matched note <b>overrides all OT-adjustment logic</b> for that employee &mdash; their <code>A</code>
+        days are left untouched regardless of spare OT, PR-day room, or anything else that would otherwise
+        apply.
       </p>
       <div class="notes-list" id="notesList"></div>
     </div>
@@ -482,8 +485,8 @@
       <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 14px; line-height:1.6;">
         For every employee's <b>A</b> day, one spare OT cell (<b>PP</b>, or <b>WP</b> if no PP is left) is
         spent to convert it to present &mdash; PP&rarr;P, or WP&rarr;WO (never WP&rarr;P, which would inflate
-        PR&nbsp;DAYS). PR&nbsp;DAYS is capped at 27/month for 31-day months, 26 otherwise. Employees with an approval note only get adjusted
-        beyond the noted amount.
+        PR&nbsp;DAYS). PR&nbsp;DAYS is capped at 27/month for 31-day months, 26 otherwise. Any employee with
+        a matched note (see above) is skipped entirely &mdash; this overrides everything else.
       </p>
       <button class="btn btn-primary" id="reconcileBtn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -661,9 +664,24 @@ function parseSheet(rows){
     r++;
   }
   const lastEmpIdx = r - 1;
-  const presentDayRowIdx = lastEmpIdx + 2; // skip one blank row
-  const otRowIdx = presentDayRowIdx + 1;
-  const manpowerRowIdx = presentDayRowIdx + 2;
+
+  // Find the totals row adaptively instead of assuming a fixed gap -- some sheets put it
+  // immediately after the last employee, others leave a blank row first. Scan a few rows
+  // ahead for the first one carrying numeric values in the PR/WO/TOUR/AB/OT/MONTH columns.
+  let presentDayRowIdx = lastEmpIdx + 1;
+  for(let rr = lastEmpIdx + 1; rr <= lastEmpIdx + 5 && rr < rows.length; rr++){
+    const row = rows[rr];
+    if(!row) continue;
+    const hasTotals = [prIdx, woIdx, abIdx, otIdx, monthIdx].some(idx => typeof row[idx] === 'number');
+    if(hasTotals){ presentDayRowIdx = rr; break; }
+  }
+  // If that totals row ALSO carries numeric values across the day columns, this sheet uses
+  // the older 3-row breakdown style (PRESENT DAY / OT / MANPOWER as separate rows). Otherwise
+  // it's a single combined totals row and there's nothing further to write per-day.
+  const totalsRow = rows[presentDayRowIdx] || [];
+  const dayColsHaveNumbers = totalsRow.slice(DAY_START, DAY_START + numDays).some(v => typeof v === 'number');
+  const otRowIdx = dayColsHaveNumbers ? presentDayRowIdx + 1 : presentDayRowIdx;
+  const manpowerRowIdx = dayColsHaveNumbers ? presentDayRowIdx + 2 : presentDayRowIdx;
 
   // side panel rows (project info), just carried through as-is: rows presentDayRowIdx..manpowerRowIdx+1, cols A-E
   const sidePanel = [];
@@ -671,14 +689,19 @@ function parseSheet(rows){
     if(rows[rr]) sidePanel.push({ rowIdx: rr, cols: rows[rr].slice(0,5) });
   }
 
-  // scan for note text anywhere below manpower rows
+  // Capture ANY non-trivial text from right after the last employee row onward as a
+  // candidate note -- scanning from here (not from some assumed totals-row offset) means
+  // notes are found regardless of how many totals rows this particular sheet uses.
+  // whether it's phrased as an approval, a remark, or anything else doesn't matter here;
+  // detectNotes() below decides which employee (if any) it's tied to, and any match blocks
+  // OT adjustment for that employee regardless of the note's content or tone.
   const notes = [];
-  for(let rr = manpowerRowIdx + 1; rr < rows.length; rr++){
+  for(let rr = lastEmpIdx + 1; rr < rows.length; rr++){
     const row = rows[rr];
     if(!row) continue;
     for(let c = 0; c < row.length; c++){
       const v = row[c];
-      if(typeof v === 'string' && /note\s*:?-/i.test(v)){
+      if(typeof v === 'string' && v.trim().length > 3){
         notes.push(v);
       }
     }
@@ -745,20 +768,76 @@ function renderDiffTable(diffs){
 }
 
 // ---------- Detect approval notes and match to employees ----------
+function normalizeCode(s){
+  return String(s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+}
+
 function detectNotes(){
   notesByEmployee = {};
+
+  const codeToName = {};
+  siData.employees.forEach(e => {
+    if(e.code) codeToName[normalizeCode(e.code)] = e.name;
+  });
   const names = siData.employees.map(e => e.name);
-  siData.notes.forEach(noteText => {
-    names.forEach(name => {
-      const lastName = name.split(' ').pop();
-      // match if any significant word from the employee's name appears in the note
-      const nameWords = name.split(' ').filter(w => w.length > 3);
-      const hit = nameWords.some(w => noteText.toUpperCase().includes(w.toUpperCase()));
-      if(hit){
-        if(!notesByEmployee[name]) notesByEmployee[name] = { text: noteText, approvedOT: 1 };
-      }
+
+  // Source 1: each employee's own REMARKS column, if filled in directly on their row --
+  // this is already tied to that specific employee, no matching needed.
+  siData.employees.forEach(e => {
+    const remarkText = typeof e.remarks === 'string' ? e.remarks.trim() : '';
+    if(remarkText && !notesByEmployee[e.name]){
+      notesByEmployee[e.name] = { text: remarkText, block: true };
+    }
+  });
+
+  // Source 2: a consolidated "Notes:-" block elsewhere in the sheet (below the totals),
+  // often with numbered "1) Emp Code-XXXX ..." sub-items referencing different employees.
+  // Break every collected note blob into individual lines / numbered sub-items,
+  // since a single cell can contain "Notes:-" followed by several "1) Emp Code-... "
+  // entries for different employees that each need to be matched separately.
+  const lines = [];
+  siData.notes.forEach(blob => {
+    blob.split(/\r?\n/).forEach(rawLine => {
+      // a line might itself contain multiple numbered items run together
+      const parts = rawLine.split(/(?=\d+\)\s*Emp\.?\s*Code)/i).map(s => s.trim()).filter(Boolean);
+      lines.push(...(parts.length ? parts : [rawLine.trim()]));
     });
   });
+
+  lines.forEach(line => {
+    if(!line) return;
+    if(/^notes?\s*:?-?\s*$/i.test(line)) return; // skip a bare "Notes:-" header line with nothing else
+
+    let matchedName = null;
+
+    // Primary match: explicit "Emp Code-XXXX" reference -- exact and unambiguous.
+    // Accepts "Emp Code", "Emp. Code", "Employee Code", any dash variant (-,–,—) or
+    // colon as the separator, and codes that themselves contain a hyphen (e.g. PBBAD-19)
+    // by normalizing away all punctuation before comparing.
+    const codeMatch = line.match(/emp(?:loyee)?\.?\s*code\s*[-–—:]\s*([A-Za-z0-9-]+)/i);
+    if(codeMatch){
+      const code = normalizeCode(codeMatch[1]);
+      if(codeToName[code]) matchedName = codeToName[code];
+    }
+
+    // Fallback: match by a significant word from the employee's name
+    if(!matchedName){
+      for(const name of names){
+        const nameWords = name.split(' ').filter(w => w.length > 3);
+        if(nameWords.some(w => line.toUpperCase().includes(w.toUpperCase()))){
+          matchedName = name;
+          break;
+        }
+      }
+    }
+
+    if(matchedName && !notesByEmployee[matchedName]){
+      // Default to blocking OT adjustment -- a note/remark tied to a specific employee
+      // means their attendance has an explanation on file, so don't auto-adjust it.
+      notesByEmployee[matchedName] = { text: line, block: true };
+    }
+  });
+
   renderNotes();
 }
 
@@ -774,11 +853,8 @@ function renderNotes(){
     div.className = 'note-item';
     div.innerHTML = `
       <div class="txt"><strong>${name}</strong> — ${notesByEmployee[name].text}</div>
-      <div>Approved OT: <input type="number" min="0" value="${notesByEmployee[name].approvedOT}" data-name="${name}"></div>
+      <div style="font-size:11.5px; font-weight:700; color:#92400E; background:#fde68a; padding:5px 10px; border-radius:6px; flex-shrink:0; white-space:nowrap;">OT adjustment blocked</div>
     `;
-    div.querySelector('input').addEventListener('input', (e) => {
-      notesByEmployee[name].approvedOT = parseInt(e.target.value || '0', 10);
-    });
     notesList.appendChild(div);
   });
 }
@@ -808,13 +884,14 @@ reconcileBtn.addEventListener('click', () => {
     }
 
     const note = notesByEmployee[emp.name];
-    const usableOT = note ? Math.max(0, ot - note.approvedOT) : ot;
+    const usableOT = note ? 0 : ot; // Rule: any note tied to this employee overrides everything else — no OT adjustment
     const prCap = numDays === 31 ? 27 : 26; // Rule 1/2: 31-day month caps at 27 PR days, otherwise 26
     const roomToCap = Math.max(0, prCap - pr);
     const adjustCount = Math.min(aPositions.length, usableOT, roomToCap);
 
     if(adjustCount === 0){
-      logLines.push(`<span class="warn">${emp.name}: no adjustment (available OT=${usableOT}${note ? ' after note' : ''} [from day cells: PP=${countif(days,'PP')}, WP=${countif(days,'WP')}], room to ${prCap}=${roomToCap}, A count=${aPositions.length})</span>`);
+      const noteMsg = note ? ` — a note is on file for this employee, which overrides adjustment logic entirely` : '';
+      logLines.push(`<span class="warn">${emp.name}: no adjustment${noteMsg} (available OT=${usableOT} [from day cells: PP=${countif(days,'PP')}, WP=${countif(days,'WP')}], room to ${prCap}=${roomToCap}, A count=${aPositions.length})</span>`);
       return { ...emp, days };
     }
 
@@ -830,7 +907,6 @@ reconcileBtn.addEventListener('click', () => {
     }
 
     logLines.push(`<span class="ok">${emp.name}: converted ${adjustCount} 'A' day(s) (day ${aPositions.slice(0,adjustCount).map(p=>p+1).join(', ')}) to P, spent ${spent} OT credit(s)${wpUsedDays.length ? ` (incl. WP→WO on day ${wpUsedDays.join(', ')})` : ''}.</span>`);
-    if(note) logLines.push(`  &nbsp;&nbsp;↳ note on file excluded ${note.approvedOT} pre-approved OT day(s) from this employee's adjustment.`);
 
     return { ...emp, days };
   });
@@ -840,9 +916,9 @@ reconcileBtn.addEventListener('click', () => {
   reconcileLog.innerHTML = logLines.join('<br>');
   reconcileLog.classList.remove('hidden');
   downloadBtn.classList.remove('hidden');
+  renderWOReview(finalModified);
   renderFinalPreview(finalModified);
   previewCard.classList.remove('hidden');
-  renderWOReview(finalModified);
   markStep(4, 'done');
   markStep(5, 'active');
 });
@@ -920,6 +996,26 @@ function detectWOFlags(sheetData){
         });
       }
     }
+
+    // Rule 5: a WO immediately followed by absence, in a week with heavy absence overall,
+    // is a common sign the WO was actually mislabeled and should be A instead — e.g. the
+    // employee was already unwell/absent starting right at what got recorded as their WO.
+    for(let p = 0; p < days.length; p++){
+      if(days[p] !== 'WO') continue;
+      const followedByAbsence = days[p + 1] === 'A';
+      if(!followedByAbsence) continue;
+      const weekOfWO = Math.floor(p / 7);
+      const weekStart = weekOfWO * 7;
+      const weekEnd = Math.min(weekStart + 7, days.length);
+      const weekAbsences = days.slice(weekStart, weekEnd).filter(v => v === 'A').length;
+      if(weekAbsences >= 3){
+        flags.push({
+          empIndex, dayIndex: p, employeeName: emp.name,
+          reason: `This WO (day ${p + 1}) is immediately followed by an absent day, and that week shows ${weekAbsences} absences overall — likely should be marked A instead of WO.`,
+          suggested: 'A'
+        });
+      }
+    }
   });
 
   return flags;
@@ -937,18 +1033,25 @@ function renderWOReview(sheetData){
 
   let html = '<tr><th style="text-align:left;">Employee</th><th>Day</th><th style="text-align:left;">Reason</th><th>Set to</th></tr>';
   flags.forEach((f, i) => {
+    const suggested = f.suggested || 'WO';
+    const opt = (val, label) => `<option value="${val}" ${suggested === val ? 'selected' : ''}>${label}</option>`;
     html += `<tr id="woflag-${i}">
       <td class="name">${f.employeeName}</td>
       <td>${f.dayIndex + 1}</td>
       <td style="text-align:left; font-size:11.5px; color:var(--text-soft);">${f.reason}</td>
       <td>
         <select data-emp="${f.empIndex}" data-day="${f.dayIndex}" style="font-size:12.5px; padding:5px 8px; border:1px solid var(--border); border-radius:6px;">
-          <option value="WO" selected>WO (keep)</option>
-          <option value="A">A (absent)</option>
-          <option value="P">P (present)</option>
+          ${opt('WO', 'WO (keep)')}
+          ${opt('A', 'A (absent)')}
+          ${opt('P', 'P (present)')}
         </select>
       </td>
     </tr>`;
+    // apply the suggested value immediately so the preview/download reflect it without
+    // requiring the user to manually re-select the already-highlighted option
+    if(f.suggested){
+      sheetData.employees[f.empIndex].days[f.dayIndex] = f.suggested;
+    }
   });
   woReviewTable.innerHTML = html;
 
@@ -1112,19 +1215,27 @@ function writeSheet(ws, sheetData){
     ws.getCell(r, sheetData.monthIdx+1).value = { formula: `SUM(${prCol}${r}:${abCol}${r})` };
   });
 
-  // totals rows: PRESENT DAY / OT / MANPOWER per day column
+  // totals rows: PRESENT DAY / OT / MANPOWER per day column -- only when this sheet
+  // actually uses that 3-row breakdown structure (otR/manR distinct from presentR).
+  // A single combined totals row (otR === manR === presentR) has no per-day breakdown
+  // to write -- writing all three formulas into the same cells would just clobber
+  // each other, so skip that loop entirely for this layout.
   const presentR = presentDayRowIdx + 1, otR = otRowIdx + 1, manR = manpowerRowIdx + 1;
   const firstEmpR = employees[0].rowIdx + 1, lastEmpR = employees[employees.length-1].rowIdx + 1;
-  for(let d = 0; d < numDays; d++){
-    const c = DAY_START + d + 1;
-    const cl = colName(DAY_START + d);
-    ws.getCell(presentR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"P")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")` };
-    ws.getCell(otR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WP")+2*COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WPP")` };
-    ws.getCell(manR, c).value = { formula: `SUM(${cl}${presentR}:${cl}${otR})` };
+  const hasSeparateBreakdownRows = otR !== presentR && manR !== presentR;
+
+  if(hasSeparateBreakdownRows){
+    for(let d = 0; d < numDays; d++){
+      const c = DAY_START + d + 1;
+      const cl = colName(DAY_START + d);
+      ws.getCell(presentR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"P")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")` };
+      ws.getCell(otR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WP")+2*COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WPP")` };
+      ws.getCell(manR, c).value = { formula: `SUM(${cl}${presentR}:${cl}${otR})` };
+    }
+    ws.getCell(presentR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${presentR}:${dayEndLetter}${presentR})` };
+    ws.getCell(otR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${otR}:${dayEndLetter}${otR})` };
+    ws.getCell(manR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${manR}:${dayEndLetter}${manR})` };
   }
-  ws.getCell(presentR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${presentR}:${dayEndLetter}${presentR})` };
-  ws.getCell(otR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${otR}:${dayEndLetter}${otR})` };
-  ws.getCell(manR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${manR}:${dayEndLetter}${manR})` };
 
   const prCol = colName(sheetData.prIdx), woCol = colName(sheetData.woIdx), tourCol = colName(sheetData.tourIdx),
         abCol = colName(sheetData.abIdx), otCol = colName(sheetData.otIdx), monthCol = colName(sheetData.monthIdx);
@@ -1167,12 +1278,17 @@ function writeSheet(ws, sheetData){
     }
   }
 
-  // ---- Merge "Note" text row across 3 columns (C:E on its row) ----
+  // ---- Merge "Note" content cells across 3 columns (skip bare "Notes:-" header labels,
+  // which would otherwise get merged over and hide the actual note text sitting next to them) ----
   for(let rr = 0; rr < rows.length; rr++){
     const row = rows[rr];
     if(!row) continue;
     for(let c = 0; c < row.length; c++){
-      if(typeof row[c] === 'string' && /note\s*:?-/i.test(row[c])){
+      const v = row[c];
+      if(typeof v !== 'string') continue;
+      const isBareHeader = /^notes?\s*:?-?\s*$/i.test(v.trim());
+      const looksLikeNoteContent = /emp(?:loyee)?\.?\s*code/i.test(v) || (/note\s*:?-/i.test(v) && v.trim().length > 15);
+      if(looksLikeNoteContent && !isBareHeader){
         try{ ws.mergeCells(rr+1, c+1, rr+1, c+3); }catch(e){}
         const cell = ws.getCell(rr+1, c+1);
         cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
