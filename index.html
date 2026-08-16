@@ -3,1351 +3,757 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 9 - Attendance Automater</title>
+<title>AI-9 · Salary Register Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --blue:#2563EB;
-    --blue-dark:#1D4ED8;
-    --green:#16A34A;
-    --amber:#F59E0B;
-    --red:#DC2626;
-    --brown:#B08252;
-    --slate:#64748B;
-    --navy:#0F172A;
-    --navy-2:#16213E;
-    --bg:#F5F7FB;
-    --card:#FFFFFF;
-    --border:#E5E9F0;
-    --text:#0F172A;
-    --text-soft:#64748B;
-    --font:'Inter', system-ui, sans-serif;
+    --ink:#0f1b2d;
+    --paper:#f6f4ee;
+    --ledger:#123a5e;
+    --ledger-2:#1c4f7c;
+    --brass:#b98a3d;
+    --brass-2:#d8ad64;
+    --line:#d8d2c2;
+    --ok:#2f6b45;
+    --warn:#a4432b;
+    --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:var(--font);
-    background:var(--bg);
-    color:var(--text);
-    -webkit-font-smoothing:antialiased;
-  }
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+
   .app{
     display:grid;
-    grid-template-columns:250px 1fr;
+    grid-template-columns: 300px 1fr;
     min-height:100vh;
   }
 
-  /* ================= SIDEBAR ================= */
-  .sidebar{
-    background:var(--navy);
-    color:#CBD5E1;
-    padding:24px 16px;
-    display:flex;
-    flex-direction:column;
-    overflow-y:auto;
-    max-height:100vh;
-    position:sticky;
-    top:0;
-  }
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:4px 8px 22px;
-    border-bottom:1px solid rgba(255,255,255,0.08);
-    margin-bottom:18px;
-  }
-  .brand-icon{
-    width:34px;height:34px;
-    background:linear-gradient(135deg, var(--blue), #4F7CF6);
-    border-radius:9px;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    box-shadow:0 6px 14px -6px rgba(37,99,235,.6);
-  }
-  .brand-text .t1{font-size:13px;font-weight:700;color:#fff;line-height:1.2;}
-  .brand-text .t2{font-size:10.5px;color:#8B98AC;}
-
-  .navlabel{
-    font-size:10.5px;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:#5C6B84;
-    padding:14px 10px 6px;
-    font-weight:700;
-  }
-  .nav{list-style:none;margin:0;padding:0;}
-  .nav li a{
-    display:flex;
-    align-items:center;
-    gap:11px;
-    padding:9px 12px;
-    border-radius:7px;
-    color:#B7C2D6;
-    text-decoration:none;
-    font-size:13.5px;
-    font-weight:600;
-    margin-bottom:2px;
-    transition:background .15s, color .15s;
-    cursor:pointer;
-  }
-  .nav li a .ic{
-    width:18px;height:18px;flex-shrink:0;
-    display:inline-flex;align-items:center;justify-content:center;
-  }
-  .nav li a:hover{background:rgba(255,255,255,0.06); color:#fff;}
-  .nav li a.active{background:var(--blue); color:#fff;}
-  .nav li a.done{color:#6EE7B7;}
-  .nav li a.done .ic{color:#6EE7B7;}
-
-  .sidebar-foot{
-    margin-top:auto;
-    padding:14px 10px 4px;
-    font-size:10.5px;
-    color:#5C6B84;
-    border-top:1px solid rgba(255,255,255,0.08);
-    line-height:1.6;
-  }
-
-  .steps{list-style:none;margin:0;padding:2px 6px 4px;}
-  .step{
-    display:grid;
-    grid-template-columns:24px 1fr;
-    gap:10px;
-    padding-bottom:16px;
+  /* LEFT RAIL */
+  .rail{
+    background:var(--ledger);
+    color:#eef3f8;
+    padding:32px 26px 40px;
+    border-right:3px solid var(--brass);
     position:relative;
   }
-  .step:not(:last-child)::before{
+  .rail::before{
     content:"";
-    position:absolute;
-    left:11px; top:24px; bottom:0;
-    width:1px;
-    background:rgba(255,255,255,0.12);
+    position:absolute; top:0; right:-3px; bottom:0; width:3px;
+    background:repeating-linear-gradient(180deg, var(--brass) 0 6px, transparent 6px 12px);
+    opacity:.6;
   }
-  .step-num{
-    width:22px;height:22px;
-    border:1px solid var(--blue);
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-size:11px;
-    font-weight:700;
-    color:#fff;
-    background:rgba(37,99,235,0.25);
-    flex-shrink:0;
+  .rail h2{
+    font-family:var(--serif);
+    font-size:15px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--brass-2);
+    margin:0 0 22px;
+    padding-bottom:12px;
+    border-bottom:1px solid rgba(255,255,255,.18);
   }
-  .step h4{
-    margin:1px 0 4px;
-    font-size:12px;
-    font-weight:600;
-    color:#EAEFF7;
-  }
-  .step p{
-    margin:0;
-    font-size:11px;
+  .steps{list-style:none;margin:0 0 34px;padding:0;counter-reset:step;}
+  .steps li{
+    counter-increment:step;
+    position:relative;
+    padding:0 0 20px 34px;
+    font-size:13.5px;
     line-height:1.5;
-    color:#8B98AC;
+    color:#d6e2ee;
+  }
+  .steps li::before{
+    content:counter(step);
+    position:absolute; left:0; top:0;
+    width:22px; height:22px;
+    border:1px solid var(--brass-2);
+    border-radius:50%;
+    font-family:var(--mono);
+    font-size:11px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--brass-2);
+  }
+  .steps li::after{
+    content:"";
+    position:absolute; left:11px; top:24px; bottom:0;
+    width:1px;
+    background:rgba(255,255,255,.14);
+  }
+  .steps li:last-child::after{display:none;}
+  .steps b{color:#fff;display:block;margin-bottom:2px;font-weight:600;}
+
+  .formulas h2{margin-top:6px;}
+  .formula-block{
+    background:rgba(0,0,0,.18);
+    border-left:2px solid var(--brass-2);
+    padding:10px 12px;
+    margin-bottom:10px;
+    border-radius:2px;
+  }
+  .formula-block .name{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--brass-2);
+    margin-bottom:4px;
+  }
+  .formula-block code{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:#eaf1f8;
+    display:block;
+    line-height:1.5;
+    white-space:pre-wrap;
   }
 
-  /* ================= MAIN ================= */
-  .main{padding:26px 34px 60px;}
-
-  .brand-banner{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    text-align:center;
-    gap:6px;
-    margin-bottom:22px;
-    padding-bottom:18px;
-    border-bottom:1px solid var(--border);
+  /* CENTER */
+  .main{padding:38px 46px 60px;max-width:1180px;}
+  .masthead{
+    display:flex; align-items:baseline; gap:18px;
+    border-bottom:3px double var(--ink);
+    padding-bottom:14px; margin-bottom:6px;
   }
-  .brand-title{
-    font-size:26px;
-    font-weight:800;
-    color:var(--text);
+  .masthead .tag{
+    font-family:var(--mono);
+    font-size:11px; letter-spacing:.12em;
+    background:var(--ink); color:var(--paper);
+    padding:3px 8px; border-radius:2px;
+  }
+  .masthead h1{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:34px;
+    margin:0;
     letter-spacing:-.01em;
   }
-  .brand-sub{font-size:13px; color:var(--text-soft); font-weight:500;}
-
-  .topbar-right{display:flex;align-items:center;gap:14px;}
-  .pill{
-    display:flex;align-items:center;gap:8px;
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:8px 12px;
-    font-size:12.5px;
-    color:var(--text-soft);
-    font-weight:500;
-  }
-
-  /* ---- section panel ---- */
-  .panel{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-left:4px solid var(--blue);
-    border-radius:12px;
-    padding:22px 24px;
-    margin-bottom:22px;
-  }
-  .panel.c-green{border-left-color:var(--green);}
-  .panel.c-amber{border-left-color:var(--amber);}
-  .panel-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:18px;
-  }
-  .panel-head h2{font-size:15.5px;font-weight:700;margin:0;}
-  .panel-head .tag{
-    font-size:11px;color:var(--text-soft);
-    background:#F1F5F9;padding:4px 10px;border-radius:20px;font-weight:600;
-  }
-
-  .inline-step{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:14px;
-  }
-  .step-chip{
-    background:var(--blue);
-    color:#fff;
-    font-size:11px;
-    font-weight:700;
+  .masthead .sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:#6b6252;
+    margin:0 0 30px;
     letter-spacing:.03em;
-    padding:4px 10px;
-    border-radius:20px;
-    flex-shrink:0;
-  }
-  .inline-step-txt{
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--text-soft);
   }
 
-  .drop-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:18px;
-    margin-bottom:20px;
+  .panel{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:24px;
+    margin-bottom:22px;
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
   }
-  .dropzone{
-    border:1.5px dashed #C9D3E0;
-    background:#FAFBFD;
-    border-radius:10px;
-    padding:26px 18px;
+  .panel h3{
+    font-family:var(--serif); font-size:16px; margin:0 0 16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel h3 .num{
+    font-family:var(--mono); font-size:11px; color:var(--brass);
+    border:1px solid var(--brass); border-radius:3px; padding:1px 6px;
+  }
+
+  .config-row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
+  .field{flex:1; min-width:200px;}
+  .field label{
+    display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:#6b6252; margin-bottom:6px; font-weight:600;
+  }
+  select, input[type=text], input[type=number]{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:4px;
+    font-family:var(--sans); font-size:13.5px; background:#fdfcf9; color:var(--ink);
+  }
+  select:focus, input:focus{outline:2px solid var(--ledger-2); outline-offset:1px;}
+
+  #dropzone{
+    border:2px dashed var(--brass);
+    border-radius:8px;
+    padding:36px 20px;
     text-align:center;
+    background:repeating-linear-gradient(135deg, rgba(185,138,61,.04) 0 10px, transparent 10px 20px);
     cursor:pointer;
-    transition:all .15s ease;
+    transition:background .15s;
   }
-  .dropzone:hover, .dropzone.drag{border-color:var(--blue); background:#EFF4FE;}
-  .dropzone.filled{border-style:solid; border-color:var(--green); background:#F0FBF4;}
-  .dz-tag{
-    display:inline-block;
-    font-size:11px;font-weight:700;color:var(--blue);
-    text-transform:uppercase; letter-spacing:.04em;
-    margin-bottom:10px;
+  #dropzone.drag{background:rgba(185,138,61,.14);}
+  #dropzone .icon{font-size:30px; margin-bottom:8px;}
+  #dropzone .main-txt{font-family:var(--serif); font-size:16px; margin-bottom:4px;}
+  #dropzone .sub-txt{font-size:12.5px; color:#847a68;}
+  #fileInput{display:none;}
+  #fileName{
+    margin-top:10px; font-family:var(--mono); font-size:12.5px; color:var(--ok);
+    display:none;
   }
-  .dz-main{font-size:13.5px;font-weight:600;margin-bottom:3px;}
-  .dz-sub{font-size:11.5px;color:var(--text-soft);}
-  .dz-file{
-    margin-top:10px;
-    font-size:11.5px;
-    color:var(--green);
-    font-weight:600;
-    word-break:break-all;
-  }
-  input[type=file]{display:none;}
-  .dropzone input[type=file]{display:none;}
 
   .btn{
-    font-family:var(--font);
-    font-weight:700;
-    font-size:13.5px;
-    padding:10px 20px;
-    border-radius:8px;
-    border:none;
-    cursor:pointer;
-    display:inline-flex;align-items:center;gap:8px;
-    transition:all .15s ease;
+    font-family:var(--sans); font-weight:600; font-size:13.5px;
+    padding:11px 22px; border-radius:5px; border:none; cursor:pointer;
+    transition:transform .08s, box-shadow .15s;
   }
-  .btn-primary{background:var(--blue); color:#fff;}
-  .btn-primary:hover:not(:disabled){background:var(--blue-dark);}
-  .btn-primary:disabled{background:#B7C2D6; cursor:not-allowed;}
-  .btn-green{background:var(--green); color:#fff;}
-  .btn-green:hover{background:#128A3E;}
-  .status{font-size:12.5px; color:var(--text-soft); margin-top:10px;}
-  .status.ok{color:var(--green); font-weight:600;}
-  .status.err{color:var(--red); font-weight:600;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--ledger); color:#fff;}
+  .btn-primary:hover{background:var(--ledger-2);}
+  .btn-primary:disabled{background:#b7c1cb; cursor:not-allowed;}
+  .btn-gold{background:var(--brass); color:#fff;}
+  .btn-gold:hover{background:var(--brass-2);}
+  .btn-row{display:flex; gap:12px; margin-top:16px; align-items:center;}
 
-  /* summary table */
-  table.preview{width:100%; border-collapse:collapse; font-size:12px;}
-  table.preview th{
-    text-align:center; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
-    color:var(--text-soft); border-bottom:2px solid var(--border);
-    padding:8px 10px; background:#FAFBFD; white-space:normal; line-height:1.5;
+  .status{
+    font-family:var(--mono); font-size:12px; padding:8px 12px; border-radius:4px;
+    margin-top:12px; display:none;
   }
-  table.preview td{padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; text-align:center;}
-  table.preview td.name{text-align:left; font-weight:600; white-space:nowrap;}
-  table.preview tr:hover td{background:#F8FAFD;}
-  .badge{display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700;}
-  .badge.si{background:#EFF4FE; color:var(--blue-dark);}
-  .badge.hr{background:#FEF3E2; color:#92400E;}
+  .status.err{background:#fbe8e3; color:var(--warn); display:block;}
+  .status.ok{background:#e8f2ea; color:var(--ok); display:block;}
 
-  .empty-preview{
-    padding:30px 10px;
-    text-align:center;
-    color:var(--text-soft);
-    font-size:13px;
+  /* table */
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:6px;}
+  table{border-collapse:collapse; width:100%; font-size:12px; font-family:var(--mono);}
+  thead th{
+    background:var(--ledger); color:#eaf1f8; text-align:right; padding:8px 10px;
+    white-space:nowrap; font-size:10.5px; letter-spacing:.02em; position:sticky; top:0;
+    text-transform:uppercase;
   }
+  thead th:nth-child(-n+4){text-align:left;}
+  tbody td{padding:7px 10px; border-bottom:1px solid #eee; white-space:nowrap; text-align:right;}
+  tbody td:nth-child(-n+4){text-align:left; font-family:var(--sans);}
+  tbody tr:nth-child(even){background:#faf9f5;}
+  tbody tr.gtot{background:var(--brass-2)!important; font-weight:700;}
+  tbody tr.gtot td{border-top:2px solid var(--brass);}
 
-  .notes-list{display:flex; flex-direction:column; gap:10px;}
-  .note-item{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    background:#FFFBEB; border:1.5px solid var(--amber); color:#92400E;
-    border-radius:8px; padding:12px 16px; font-size:12.5px; line-height:1.6;
+  .empty-hint{
+    text-align:center; padding:50px 20px; color:#a39a86; font-family:var(--serif); font-size:15px;
   }
-  .note-item .txt strong{color:#78350F;}
-  .note-item .ot-input{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; flex-shrink:0;}
-  .note-item input{
-    width:56px; padding:7px 9px; border:1.5px solid var(--amber); border-radius:6px; font-size:13px;
-    text-align:center; font-weight:700; font-family:var(--font);
+  .badge{
+    display:inline-block; font-family:var(--mono); font-size:10.5px;
+    padding:2px 7px; border-radius:10px; background:#eef1e8; color:var(--ok); margin-left:8px;
   }
-
-  .log{
-    background:var(--navy); border:1px solid var(--navy-2); border-radius:10px; padding:14px 18px;
-    font-size:12.5px; margin-top:14px; max-height:280px; overflow-y:auto;
-    font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; line-height:1.85; color:#CBD5E1;
-  }
-  .log .ok{color:#6EE7B7;}
-  .log .warn{color:#FCD34D;}
-  .log::before{content:'$ reconcile.run()'; display:block; color:#5C6B84; margin-bottom:8px;}
-
-  .legend{display:flex; gap:18px; font-size:12.5px; color:var(--text-soft); margin-top:18px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:18px; font-weight:600;}
-  .swatch{display:inline-block; width:13px; height:13px; border-radius:4px; margin-right:7px; vertical-align:-2px; border:1px solid rgba(0,0,0,.08);}
-
-  .hidden{display:none;}
-
-  @media (max-width:900px){
-    .app{grid-template-columns:1fr;}
-    .sidebar{display:none;}
-    .drop-grid{grid-template-columns:1fr;}
-  }
+  footer{margin-top:26px; font-size:11.5px; color:#a39a86; font-family:var(--mono);}
 </style>
 </head>
 <body>
-
 <div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="brand-text">
-        <div class="t1">Attendance</div>
-        <div class="t2">Automater</div>
-      </div>
-    </div>
-
-    <div class="navlabel">Main</div>
-    <ul class="nav">
-      <li><a class="active" id="navUpload"><span class="ic">&#x2B06;</span> Upload &amp; Compare</a></li>
-      <li><a id="navDiff"><span class="ic">&#x2195;</span> Differences</a></li>
-      <li><a id="navNotes"><span class="ic">&#x1F4CB;</span> Approval Notes</a></li>
-      <li><a id="navReconcile"><span class="ic">&#x21BB;</span> Reconcile &amp; Download</a></li>
-    </ul>
-
-    <div class="navlabel">How to Use</div>
+  <!-- LEFT RAIL -->
+  <aside class="rail">
+    <h2>Steps</h2>
     <ol class="steps">
-      <li class="step">
-        <span class="step-num">1</span>
-        <div>
-          <h4>Upload both files</h4>
-          <p>Drop the Site Incharge (SI) attendance Excel and the HR version into the two boxes.</p>
-        </div>
-      </li>
-      <li class="step">
-        <span class="step-num">2</span>
-        <div>
-          <h4>Compare</h4>
-          <p>Every mismatched day cell and summary total between the two files is listed for review.</p>
-        </div>
-      </li>
-      <li class="step">
-        <span class="step-num">3</span>
-        <div>
-          <h4>Review approval notes</h4>
-          <p>Notes found in the SI file are auto-matched to employees with an editable approved-OT count.</p>
-        </div>
-      </li>
-      <li class="step">
-        <span class="step-num">4</span>
-        <div>
-          <h4>Reconcile</h4>
-          <p>Spare OT is spent against Absent days &mdash; PP&rarr;P or WP&rarr;WO &mdash; capped at 27 PR days for 31-day months, 26 otherwise.</p>
-        </div>
-      </li>
-      <li class="step">
-        <span class="step-num">5</span>
-        <div>
-          <h4>Download</h4>
-          <p>A two-sheet workbook &mdash; Modified (formula-driven, color-coded) and the original HR sheet.</p>
-        </div>
-      </li>
+      <li><b>Upload attendance</b>Drop the monthly attendance workbook. If it has multiple sheets, the "Modify" / "Final" tab is used automatically.</li>
+      <li><b>Choose project</b>Pick the site preset — it sets the wage zone, Sal Cal Days rule and Pay Days rule.</li>
+      <li><b>Auto-map columns</b>Emp Code, Name, Designation, DOJ, PR / WO / AB / OT days are detected from the header row.</li>
+      <li><b>Classify skill</b>Designation is mapped to Unskilled / Semi / Skilled / Highly Skilled.</li>
+      <li><b>Apply wage rates</b>Central CLC or state-zone Basic + VDA daily rates for the selected project are applied.</li>
+      <li><b>Compute register</b>Basic, VDA, OT, PF, ESI, PT and Net Amount are calculated per employee.</li>
+      <li><b>Review on screen</b>Check the table, then download the full-format Excel register.</li>
     </ol>
 
-    <div class="sidebar-foot">Runs entirely in your browser. No files are uploaded to a server.</div>
+    <div class="formulas">
+      <h2>Formulas Used</h2>
+      <div class="formula-block">
+        <div class="name">Basic (Th) / VDA (Th)</div>
+        <code>Daily Rate × 26</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">Basic / VDA (actual)</div>
+        <code>ROUND(Th / Sal Cal Days × Pay Days)</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">OT Amount</div>
+        <code>ROUND(Total Earning(Th) / Sal Cal Days × OT Days)</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">Total Earning</div>
+        <code>Basic + VDA + Incentive + OT Amt</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">Total Earning w/o OT</div>
+        <code>Total Earning − (Incentive + OT Amt)</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">PF</div>
+        <code>ROUND(15000 × 12% / Sal Cal Days × Pay Days)</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">PF Earning</div>
+        <code>ROUND(15000 / Sal Cal Days × Pay Days)</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">ESI</div>
+        <code>ROUNDUP(IF(TE(Th) > 21000, 0, TE × 0.75%))</code>
+      </div>
+      <div class="formula-block">
+        <div class="name">Net Amount</div>
+        <code>Total Earning − Total Deduction</code>
+      </div>
+    </div>
   </aside>
 
-  <!-- MAIN -->
+  <!-- CENTER -->
   <main class="main">
+    <div class="masthead">
+      <span class="tag">AI · 9</span>
+      <h1>Salary Register Generator</h1>
+    </div>
+    <p class="sub">DROP ATTENDANCE → REVIEW ON SCREEN → DOWNLOAD REGISTER</p>
 
-    <div class="brand-banner">
-      <div class="brand-title">AI 9 - Attendance Automater</div>
-      <div class="brand-sub">Reconcile SI vs HR attendance and generate a formula-driven Excel</div>
+    <div class="panel">
+      <h3><span class="num">01</span> Attendance file</h3>
+      <div id="dropzone">
+        <div class="icon">📄</div>
+        <div class="main-txt">Drop attendance workbook here, or click to browse</div>
+        <div class="sub-txt">.xlsx — multi-sheet files use the Modify/Final tab automatically</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+      </div>
+      <div id="fileName"></div>
+      <div id="uploadStatus" class="status"></div>
     </div>
 
-    <!-- UPLOAD & COMPARE -->
-    <div class="panel" id="uploadPanel">
-      <div class="panel-head">
-        <h2>Upload &amp; Compare</h2>
-        <span class="tag">Step 1&ndash;2</span>
-      </div>
-
-      <div class="inline-step">
-        <span class="step-chip">Step 1</span>
-        <span class="inline-step-txt">Drop the SI and HR attendance files</span>
-      </div>
-      <div class="drop-grid">
-        <div class="dropzone" id="dropSI">
-          <span class="dz-tag">Site Incharge</span>
-          <div class="dz-main">SI attendance file</div>
-          <div class="dz-sub">Drop or click to choose .xlsx</div>
+    <div class="panel">
+      <h3><span class="num">02</span> Project & rules</h3>
+      <div class="config-row">
+        <div class="field">
+          <label>Project / Site</label>
+          <select id="projectSelect">
+            <option value="nagpur">PBB Mihan Nagpur</option>
+            <option value="amritsar">BHS Amritsar</option>
+            <option value="ahmedabad">PBB Ahmedabad</option>
+            <option value="chennai">PBB Chennai</option>
+            <option value="kolkata">NEC Kolkata</option>
+            <option value="custom">Custom / New Site</option>
+          </select>
         </div>
-        <div class="dropzone" id="dropHR">
-          <span class="dz-tag">HR</span>
-          <div class="dz-main">HR attendance file</div>
-          <div class="dz-sub">Drop or click to choose .xlsx</div>
+        <div class="field">
+          <label>Month / Year</label>
+          <input type="text" id="monthYear" placeholder="e.g. Apr-26">
+        </div>
+        <div class="field">
+          <label>Sal Cal Days</label>
+          <select id="salCalMode">
+            <option value="month">Days in month</option>
+            <option value="fixed26">Fixed 26</option>
+            <option value="mixed">30 (Supervisor) / 26 (others)</option>
+          </select>
         </div>
       </div>
-      <input type="file" id="fileSI" accept=".xlsx,.xls">
-      <input type="file" id="fileHR" accept=".xlsx,.xls">
-
-      <div class="inline-step">
-        <span class="step-chip">Step 2</span>
-        <span class="inline-step-txt">Compare every day cell and summary total</span>
+      <div class="config-row">
+        <div class="field">
+          <label>Pay Days basis</label>
+          <select id="payDaysMode">
+            <option value="pr_wo">PR Days + WO &amp; FH &amp; WP</option>
+            <option value="pr_only">PR Days only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Wage zone (Central CLC)</label>
+          <select id="wageZone">
+            <option value="A">Area A</option>
+            <option value="B">Area B</option>
+            <option value="C">Area C</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Flat PT (₹/month, 0 = none)</label>
+          <input type="number" id="ptFlat" value="0">
+        </div>
       </div>
-      <button class="btn btn-primary" id="compareBtn" disabled>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Compare files
-      </button>
-      <div class="status" id="statusCompare"></div>
-    </div>
-
-    <!-- DIFFERENCES -->
-    <div class="panel hidden" id="diffCard">
-      <div class="panel-head">
-        <h2>Differences Found</h2>
-        <span class="tag">Step 2 result</span>
-      </div>
-      <div id="diffSummary" style="font-size:13px; color:var(--text-soft); margin-bottom:6px; font-weight:600;"></div>
-      <div style="overflow-x:auto;"><table class="preview" id="diffTable"></table></div>
-    </div>
-
-    <!-- NOTES -->
-    <div class="panel c-amber hidden" id="notesCard">
-      <div class="panel-head">
-        <h2>Detected Approval Notes</h2>
-        <span class="tag">Step 3</span>
-      </div>
-      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
-        Notes found in the SI file, matched to the specific employee(s) they reference (by employee code
-        where given, e.g. "Emp Code-PBBAD19", otherwise by name) &mdash; a note never applies to everyone.
-        A matched note <b>overrides all OT-adjustment logic</b> for that employee &mdash; their <code>A</code>
-        days are left untouched regardless of spare OT, PR-day room, or anything else that would otherwise
-        apply.
-      </p>
-      <div class="notes-list" id="notesList"></div>
-    </div>
-
-    <!-- RECONCILE -->
-    <div class="panel c-green hidden" id="reconcileCard">
-      <div class="panel-head">
-        <h2>Reconcile &amp; Download</h2>
-        <span class="tag">Step 4&ndash;5</span>
-      </div>
-      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 14px; line-height:1.6;">
-        For every employee's <b>A</b> day, one spare OT cell (<b>PP</b>, or <b>WP</b> if no PP is left) is
-        spent to convert it to present &mdash; PP&rarr;P, or WP&rarr;WO (never WP&rarr;P, which would inflate
-        PR&nbsp;DAYS). PR&nbsp;DAYS is capped at 27/month for 31-day months, 26 otherwise. Any employee with
-        a matched note (see above) is skipped entirely &mdash; this overrides everything else.
-      </p>
-      <button class="btn btn-primary" id="reconcileBtn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Run reconciliation
-      </button>
-      <div class="log hidden" id="reconcileLog"></div>
-      <button class="btn btn-green hidden" id="downloadBtn" style="margin-top:14px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Download Excel (Modified + HR)
-      </button>
-      <div class="legend">
-        <span><span class="swatch" style="background:#c6efce;"></span>WO</span>
-        <span><span class="swatch" style="background:#ffeb9c;"></span>PP</span>
-        <span><span class="swatch" style="background:#ffc7ce;"></span>A</span>
-        <span><span class="swatch" style="background:#d2b48c;"></span>WP</span>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="generateBtn" disabled>Generate Register</button>
+        <span id="genStatus" class="status"></span>
       </div>
     </div>
 
-    <!-- WO ELIGIBILITY REVIEW -->
-    <div class="panel c-amber hidden" id="woReviewCard">
-      <div class="panel-head">
-        <h2>Weekly-Off Eligibility Review</h2>
-        <span class="tag" id="woReviewTag">0 flagged</span>
+    <div class="panel">
+      <h3><span class="num">03</span> Salary Register <span id="rowCountBadge" class="badge" style="display:none;"></span></h3>
+      <div id="tableHost">
+        <div class="empty-hint">Upload an attendance file and click Generate to see the register here.</div>
       </div>
-      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
-        A WO is normally earned after 6 days of work in a week. These WO days look questionable &mdash;
-        either the employee worked very little (1 day or fewer) in the preceding 6 days while mostly
-        absent, there isn't enough prior data in this file to confirm the 6-day rule (check the
-        previous month), or the WO falls on the employee's date of joining. Nothing is changed
-        automatically &mdash; review each one and pick the correct code.
-      </p>
-      <div style="overflow-x:auto;"><table class="preview" id="woReviewTable"></table></div>
-    </div>
-
-    <!-- FINAL MODIFIED ATTENDANCE PREVIEW -->
-    <div class="panel hidden" id="previewCard">
-      <div class="panel-head">
-        <h2>Final Modified Attendance</h2>
-        <span class="tag" id="previewTag">Modified sheet</span>
-      </div>
-      <p style="font-size:12.5px; color:var(--text-soft); margin:0 0 12px; line-height:1.6;">
-        Shown in the same layout as the Attendance Sheet template &mdash; day-by-day status per
-        employee, with PR&nbsp;DAYS / WO&nbsp;&amp;&nbsp;FH&nbsp;&amp;&nbsp;WP / AB&nbsp;DAYS /
-        OT&nbsp;DAYS / MONTH&nbsp;DAYS totals recomputed from the final codes.
-      </p>
-      <div style="overflow-x:auto;"><table class="preview" id="previewTable"></table></div>
-      <div class="legend">
-        <span><span class="swatch" style="background:#c6efce;"></span>WO</span>
-        <span><span class="swatch" style="background:#ffeb9c;"></span>PP</span>
-        <span><span class="swatch" style="background:#ffc7ce;"></span>A</span>
-        <span><span class="swatch" style="background:#d2b48c;"></span>WP</span>
+      <div class="btn-row" id="downloadRow" style="display:none;">
+        <button class="btn btn-gold" id="downloadBtn">⬇ Download Excel (full format)</button>
       </div>
     </div>
 
+    <footer>AI-9 · Salary Register Generator — runs entirely in your browser, no data leaves this page.</footer>
   </main>
+
 </div>
 
 <script>
-const dropSI = document.getElementById('dropSI');
-const dropHR = document.getElementById('dropHR');
-const fileSI = document.getElementById('fileSI');
-const fileHR = document.getElementById('fileHR');
-const compareBtn = document.getElementById('compareBtn');
-const statusCompare = document.getElementById('statusCompare');
-const diffCard = document.getElementById('diffCard');
-const diffSummary = document.getElementById('diffSummary');
-const diffTable = document.getElementById('diffTable');
-const notesCard = document.getElementById('notesCard');
-const notesList = document.getElementById('notesList');
-const reconcileCard = document.getElementById('reconcileCard');
-const previewCard = document.getElementById('previewCard');
-const previewTable = document.getElementById('previewTable');
-const woReviewCard = document.getElementById('woReviewCard');
-const woReviewTable = document.getElementById('woReviewTable');
-const woReviewTag = document.getElementById('woReviewTag');
-const reconcileBtn = document.getElementById('reconcileBtn');
-const reconcileLog = document.getElementById('reconcileLog');
-const downloadBtn = document.getElementById('downloadBtn');
+/* ---------- Wage tables (Central CLC, Apr–Sep 2026) ---------- */
+const CLC_RATES = {
+  A: { Unskilled:[523,304], 'Semi-Skilled':[579,339], Skilled:[637,371], 'Highly Skilled':[693,401] },
+  B: { Unskilled:[437,256], 'Semi-Skilled':[494,287], Skilled:[579,339], 'Highly Skilled':[637,371] },
+  C: { Unskilled:[400,235], 'Semi-Skilled':[452,264], Skilled:[523,304], 'Highly Skilled':[579,339] }
+};
 
-let siData = null, hrData = null;   // parsed sheet structures
-let notesByEmployee = {};           // name -> approvedOT count (editable)
-let finalModified = null;           // reconciled sheet structure, built at reconcile time
+const PROJECT_PRESETS = {
+  nagpur:    { zone:'A', salCal:'mixed',  payDays:'pr_only', pt:200 },
+  amritsar:  { zone:'B', salCal:'month',  payDays:'pr_wo',   pt:0   },
+  ahmedabad: { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:200 },
+  chennai:   { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:0   },
+  kolkata:   { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:0   },
+  custom:    { zone:'A', salCal:'month',  payDays:'pr_wo',   pt:0   }
+};
 
-function setupDrop(dropEl, inputEl, onLoaded){
-  dropEl.addEventListener('click', () => inputEl.click());
-  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('filled'); });
-  dropEl.addEventListener('drop', e => {
-    e.preventDefault();
-    const f = e.dataTransfer.files[0];
-    if(f) loadFile(f, dropEl, onLoaded);
-  });
-  inputEl.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if(f) loadFile(f, dropEl, onLoaded);
-  });
+document.getElementById('projectSelect').addEventListener('change', e=>{
+  const p = PROJECT_PRESETS[e.target.value];
+  document.getElementById('wageZone').value = p.zone;
+  document.getElementById('salCalMode').value = p.salCal;
+  document.getElementById('payDaysMode').value = p.payDays;
+  document.getElementById('ptFlat').value = p.pt;
+});
+document.getElementById('projectSelect').dispatchEvent(new Event('change'));
+
+/* ---------- Skill classification ---------- */
+function classifySkill(desig){
+  const n = (desig||'').toUpperCase().replace(/[.\-]/g,' ');
+  if(/SUPERVISOR|ENGINEER|INCHARGE|MANAGER/.test(n)) return 'Highly Skilled';
+  if(/HELPER|SUPPORT/.test(n)) return 'Unskilled';
+  if(/TECHNICIAN|TRAINEE|OPERATOR/.test(n)) return 'Skilled';
+  return 'Semi-Skilled';
 }
 
-function loadFile(file, dropEl, onLoaded){
+/* ---------- File handling ---------- */
+let workbookData = null;
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileNameEl = document.getElementById('fileName');
+const uploadStatus = document.getElementById('uploadStatus');
+const generateBtn = document.getElementById('generateBtn');
+
+dropzone.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('dragover', e=>{e.preventDefault(); dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{
+  if(e.target.files.length) handleFile(e.target.files[0]);
+});
+
+function handleFile(file){
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-    const sheetName = wb.SheetNames.includes('Actual') ? 'Actual' : wb.SheetNames[0];
-    const ws = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
-    dropEl.classList.add('filled');
-    dropEl.querySelector('.dz-main').textContent = file.name;
-    onLoaded(parseSheet(rows));
-    checkReady();
+  reader.onload = ev=>{
+    try{
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      workbookData = wb;
+      fileNameEl.style.display='block';
+      fileNameEl.textContent = '✓ ' + file.name + '  (' + wb.SheetNames.length + ' sheet' + (wb.SheetNames.length>1?'s':'') + ': ' + wb.SheetNames.join(', ') + ')';
+      uploadStatus.className='status ok';
+      uploadStatus.textContent = 'File loaded. Choose a project and click Generate.';
+      generateBtn.disabled = false;
+    }catch(err){
+      uploadStatus.className='status err';
+      uploadStatus.textContent = 'Could not read file: ' + err.message;
+      generateBtn.disabled = true;
+    }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function checkReady(){
-  compareBtn.disabled = !(siData && hrData);
-  if(siData || hrData) markStep(1, siData && hrData ? 'done' : 'active');
+/* ---------- Sheet selection: prefer Modify/Final ---------- */
+function pickSheet(wb){
+  const names = wb.SheetNames;
+  const preferred = names.find(n => /modify|final/i.test(n));
+  return preferred || names[0];
 }
 
-const NAV_MAP = { 1:'navUpload', 2:'navUpload', 3:'navNotes', 4:'navReconcile', 5:'navReconcile' };
-function markStep(n, state){
-  const pill = document.getElementById('stepPill' + n);
-  if(pill){
-    pill.classList.remove('active','done');
-    if(state) pill.classList.add(state);
+/* ---------- Column auto-detection ---------- */
+function colLetter(idx){
+  if(idx===undefined || idx===null) return '?';
+  let s=''; idx++;
+  while(idx>0){ let m=(idx-1)%26; s=String.fromCharCode(65+m)+s; idx=Math.floor((idx-1)/26); }
+  return s;
+}
+
+function detectColumns(rows){
+  // scan first 6 rows for header keywords
+  let headerRow = -1, map = {};
+  for(let r=0; r<Math.min(6, rows.length); r++){
+    const row = rows[r] || [];
+    row.forEach((cell, c)=>{
+      const v = (cell===undefined||cell===null) ? '' : String(cell).toUpperCase().replace(/\s+/g,' ').trim();
+      if(!v) return;
+      if(/^(EMPLOYEE\s*CODE|EMP\s*CODE|EMP\s*ID)/.test(v)) { map.code = c; headerRow = Math.max(headerRow, r); }
+      else if(/^(EMPLOYEE\s*NAME|NAME)$/.test(v)) { map.name = c; headerRow = Math.max(headerRow, r); }
+      else if(/^DESIGNATION/.test(v)) { map.desig = c; headerRow = Math.max(headerRow, r); }
+      else if(/^(D\.?O\.?J\.?|DATE OF JOINING)/.test(v)) { map.doj = c; headerRow = Math.max(headerRow, r); }
+      else if(/^PR\s*DAYS/.test(v)) { map.pr = c; headerRow = Math.max(headerRow, r); }
+      else if(/^WO/.test(v)) { map.wo = c; headerRow = Math.max(headerRow, r); }
+      else if(/^AB\s*DAYS/.test(v)) { map.ab = c; headerRow = Math.max(headerRow, r); }
+      else if(/^OT\s*DAYS/.test(v)) { map.ot = c; headerRow = Math.max(headerRow, r); }
+      else if(/^(MONTH\s*DAYS)/.test(v)) { map.md = c; headerRow = Math.max(headerRow, r); }
+      else if(/^REMARKS/.test(v)) { map.remarks = c; headerRow = Math.max(headerRow, r); }
+    });
   }
-  const navId = NAV_MAP[n];
-  if(navId){
-    const navEl = document.getElementById(navId);
-    if(navEl){
-      document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
-      navEl.classList.remove('done');
-      if(state === 'done') navEl.classList.add('done');
-      else navEl.classList.add('active');
+  // Fallback: attendance sheets consistently order PR / WO / AB / OT / MONTH DAYS / REMARKS
+  // as the last 6 columns before (and including) REMARKS. If any keyword match was missed
+  // (merged cells, odd spacing, a slightly different label), backfill from that fixed offset.
+  if(map.remarks !== undefined){
+    if(map.md === undefined)  map.md  = map.remarks - 1;
+    if(map.ot === undefined)  map.ot  = map.remarks - 2;
+    if(map.ab === undefined)  map.ab  = map.remarks - 3;
+    if(map.wo === undefined)  map.wo  = map.remarks - 4;
+    if(map.pr === undefined)  map.pr  = map.remarks - 5;
+  }
+  return {headerRow, map};
+}
+
+function fixSheetRange(ws){
+  // Some workbooks carry a stale '!ref' dimension (fewer rows than actually populated),
+  // which makes sheet_to_json silently truncate. Recompute the true bounding box from
+  // the actual cell addresses present on the sheet before parsing.
+  let maxRow = 0, maxCol = 0, minRow = 0, minCol = 0, seen = false;
+  Object.keys(ws).forEach(key=>{
+    if(key[0] === '!') return;
+    const addr = XLSX.utils.decode_cell(key);
+    if(!seen){ minRow=addr.r; minCol=addr.c; maxRow=addr.r; maxCol=addr.c; seen=true; }
+    else{
+      if(addr.r < minRow) minRow = addr.r;
+      if(addr.c < minCol) minCol = addr.c;
+      if(addr.r > maxRow) maxRow = addr.r;
+      if(addr.c > maxCol) maxCol = addr.c;
     }
+  });
+  if(seen){
+    ws['!ref'] = XLSX.utils.encode_range({s:{r:minRow,c:minCol}, e:{r:maxRow,c:maxCol}});
   }
-  if(n === 2 && state === 'done'){
-    const navDiff = document.getElementById('navDiff');
-    if(navDiff) navDiff.classList.add('done');
-  }
+  return ws;
 }
 
-setupDrop(dropSI, fileSI, (parsed) => { siData = parsed; });
-setupDrop(dropHR, fileHR, (parsed) => { hrData = parsed; });
-
-document.getElementById('navUpload').addEventListener('click', () => document.getElementById('uploadPanel').scrollIntoView({behavior:'smooth'}));
-document.getElementById('navDiff').addEventListener('click', () => document.getElementById('diffCard').scrollIntoView({behavior:'smooth'}));
-document.getElementById('navNotes').addEventListener('click', () => document.getElementById('notesCard').scrollIntoView({behavior:'smooth'}));
-document.getElementById('navReconcile').addEventListener('click', () => document.getElementById('reconcileCard').scrollIntoView({behavior:'smooth'}));
-
-// ---------- Parse a raw row-array into a structured sheet ----------
-function parseSheet(rows){
-  const DAY_START = 5; // column F, 0-indexed
-  // count day columns from header row (row index 1)
-  const headerRow = rows[1] || [];
-  let numDays = 0;
-  for(let c = DAY_START; c < headerRow.length; c++){
-    if(headerRow[c] !== null && headerRow[c] !== undefined && headerRow[c] !== '') numDays++;
-    else break;
+function parseAttendance(wb){
+  const sheetName = pickSheet(wb);
+  const ws = fixSheetRange(wb.Sheets[sheetName]);
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  const {headerRow, map} = detectColumns(rows);
+  if(headerRow===-1 || map.code===undefined || map.name===undefined){
+    throw new Error('Could not detect Employee Code/Name columns in sheet "'+sheetName+'"');
   }
-  const spacerIdx = DAY_START + numDays;
-  const prIdx = spacerIdx + 1, woIdx = spacerIdx + 2, tourIdx = spacerIdx + 3,
-        abIdx = spacerIdx + 4, otIdx = spacerIdx + 5, monthIdx = spacerIdx + 6, remarksIdx = spacerIdx + 7;
-
-  // detect employee rows starting at row index 2 (row 3), while column C (idx2) is non-empty
+  if(map.pr===undefined || map.wo===undefined || map.ab===undefined || map.ot===undefined || map.md===undefined){
+    throw new Error('Could not detect PR/WO/AB/OT/MONTH DAYS columns in sheet "'+sheetName+'". Found: '+
+      'PR='+colLetter(map.pr)+' WO='+colLetter(map.wo)+' AB='+colLetter(map.ab)+' OT='+colLetter(map.ot)+' MD='+colLetter(map.md));
+  }
   const employees = [];
-  let r = 2;
-  while(rows[r] && rows[r][2]){
+  for(let r=headerRow+1; r<rows.length; r++){
     const row = rows[r];
+    if(!row) continue;
+    const code = row[map.code];
+    const name = row[map.name];
+    if(!code || !name) continue;
+    const pr = Number(row[map.pr]) || 0;
+    const wo = Number(row[map.wo]) || 0;
+    const ab = Number(row[map.ab]) || 0;
+    const ot = Number(row[map.ot]) || 0;
+    const md = Number(row[map.md]) || 0;
+    let doj = row[map.doj];
+    if(doj instanceof Date){
+      doj = String(doj.getDate()).padStart(2,'0')+'/'+String(doj.getMonth()+1).padStart(2,'0')+'/'+String(doj.getFullYear()).slice(-2);
+    } else if(doj){
+      doj = String(doj);
+    } else doj = '';
     employees.push({
-      rowIdx: r,
-      sn: row[0], code: row[1], name: row[2], designation: row[3], doj: row[4],
-      days: row.slice(DAY_START, DAY_START + numDays).map(v => v === null || v === undefined ? '' : String(v).trim()),
-      pr: row[prIdx], wo: row[woIdx], tour: row[tourIdx], ab: row[abIdx], ot: row[otIdx], month: row[monthIdx],
-      remarks: row[remarksIdx]
+      code: String(code).trim(),
+      name: String(name).trim(),
+      desig: String(row[map.desig]||'').trim(),
+      doj, pr, wo, ab, ot, md
     });
-    r++;
   }
-  const lastEmpIdx = r - 1;
-
-  // Find the totals row adaptively instead of assuming a fixed gap -- some sheets put it
-  // immediately after the last employee, others leave a blank row first. Scan a few rows
-  // ahead for the first one carrying numeric values in the PR/WO/TOUR/AB/OT/MONTH columns.
-  let presentDayRowIdx = lastEmpIdx + 1;
-  for(let rr = lastEmpIdx + 1; rr <= lastEmpIdx + 5 && rr < rows.length; rr++){
-    const row = rows[rr];
-    if(!row) continue;
-    const hasTotals = [prIdx, woIdx, abIdx, otIdx, monthIdx].some(idx => typeof row[idx] === 'number');
-    if(hasTotals){ presentDayRowIdx = rr; break; }
-  }
-  // If that totals row ALSO carries numeric values across the day columns, this sheet uses
-  // the older 3-row breakdown style (PRESENT DAY / OT / MANPOWER as separate rows). Otherwise
-  // it's a single combined totals row and there's nothing further to write per-day.
-  const totalsRow = rows[presentDayRowIdx] || [];
-  const dayColsHaveNumbers = totalsRow.slice(DAY_START, DAY_START + numDays).some(v => typeof v === 'number');
-  const otRowIdx = dayColsHaveNumbers ? presentDayRowIdx + 1 : presentDayRowIdx;
-  const manpowerRowIdx = dayColsHaveNumbers ? presentDayRowIdx + 2 : presentDayRowIdx;
-
-  // side panel rows (project info), just carried through as-is: rows presentDayRowIdx..manpowerRowIdx+1, cols A-E
-  const sidePanel = [];
-  for(let rr = presentDayRowIdx; rr <= manpowerRowIdx + 1; rr++){
-    if(rows[rr]) sidePanel.push({ rowIdx: rr, cols: rows[rr].slice(0,5) });
-  }
-
-  // Capture ANY non-trivial text from right after the last employee row onward as a
-  // candidate note -- scanning from here (not from some assumed totals-row offset) means
-  // notes are found regardless of how many totals rows this particular sheet uses.
-  // whether it's phrased as an approval, a remark, or anything else doesn't matter here;
-  // detectNotes() below decides which employee (if any) it's tied to, and any match blocks
-  // OT adjustment for that employee regardless of the note's content or tone.
-  const notes = [];
-  for(let rr = lastEmpIdx + 1; rr < rows.length; rr++){
-    const row = rows[rr];
-    if(!row) continue;
-    for(let c = 0; c < row.length; c++){
-      const v = row[c];
-      if(typeof v === 'string' && v.trim().length > 3){
-        notes.push(v);
-      }
-    }
-  }
-
-  return { rows, numDays, DAY_START, spacerIdx, prIdx, woIdx, tourIdx, abIdx, otIdx, monthIdx, remarksIdx,
-           employees, presentDayRowIdx, otRowIdx, manpowerRowIdx, sidePanel, notes };
+  return {sheetName, employees, colMap:map};
 }
 
-// ---------- Compare ----------
-compareBtn.addEventListener('click', () => {
-  markStep(1, 'done');
-  markStep(2, 'active');
-  statusCompare.textContent = 'Comparing...';
-  const diffs = [];
-  const byNameHR = {};
-  hrData.employees.forEach(e => byNameHR[e.name] = e);
+/* ---------- Register computation ---------- */
+let lastRegister = [];
+let lastHeaders = [
+  "Emp ID","Employee Name","Month/ Year","Designation","Date of Joining",
+  "BASIC (Th)","VDA (Th)","Total Earning(Th)",
+  "Sal Cal Days","LOP AVAILED","Pay Days",
+  "BASIC","VDA","NO OF H/D","OT AMT",
+  "Total Earning","Total Earning Without OT",
+  "PF","ESI","PT","Total Deduction","Net Amount",
+  "PF EARNING","Branch","Division"
+];
 
-  siData.employees.forEach(siEmp => {
-    const hrEmp = byNameHR[siEmp.name];
-    if(!hrEmp){
-      diffs.push({ name: siEmp.name, day: '—', si: '(missing in HR)', hr: '' });
-      return;
-    }
-    for(let d = 0; d < siEmp.days.length; d++){
-      const sv = siEmp.days[d] || '';
-      const hv = (hrEmp.days[d] || '');
-      if(sv !== hv){
-        diffs.push({ name: siEmp.name, day: d+1, si: sv || '(blank)', hr: hv || '(blank)' });
-      }
-    }
-    // Note: MONTH DAYS is intentionally excluded from this comparison — SI's MONTH DAYS
-    // and HR's PR+TOUR+OT-derived total aren't the same figure and shouldn't be diffed.
-    ['pr','wo','tour','ab','ot'].forEach(k => {
-      if((siEmp[k] ?? '') !== (hrEmp[k] ?? '')){
-        diffs.push({ name: siEmp.name, day: k.toUpperCase()+' total', si: siEmp[k], hr: hrEmp[k] });
-      }
+function computeRegister(employees, cfg){
+  const rows = [];
+  employees.forEach(e=>{
+    const skill = classifySkill(e.desig);
+    const [dBasic, dVda] = CLC_RATES[cfg.zone][skill];
+
+    let salCal;
+    if(cfg.salCal === 'month') salCal = e.md || 30;
+    else if(cfg.salCal === 'fixed26') salCal = 26;
+    else salCal = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase()) ? 30 : 26;
+
+    let payDays;
+    if(cfg.payDays === 'pr_only') payDays = e.pr;
+    else payDays = e.pr + e.wo;
+
+    const basicTh = dBasic*26, vdaTh = dVda*26, teTh = basicTh+vdaTh;
+    const basic = Math.round(basicTh/salCal*payDays);
+    const vda = Math.round(vdaTh/salCal*payDays);
+    const otAmt = Math.round(teTh/salCal*e.ot);
+    const te = basic+vda+otAmt;
+    const teWoOt = te-otAmt;
+    const pf = Math.round((15000*0.12)/salCal*payDays);
+    const pfEarn = Math.round(15000/salCal*payDays);
+    const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
+    const pt = cfg.pt || 0;
+    const totDed = pf+esi+pt;
+    const net = te-totDed;
+
+    rows.push({
+      code:e.code, name:e.name, monthYear:cfg.monthYear, desig:e.desig, doj:e.doj,
+      basicTh, vdaTh, teTh, salCal, lop:e.ab, payDays,
+      basic, vda, otDays:e.ot, otAmt, te, teWoOt,
+      pf, esi, pt, totDed, net, pfEarn,
+      branch:cfg.branchName, division:cfg.divisionName
     });
   });
-
-  renderDiffTable(diffs);
-  detectNotes();
-  diffCard.classList.remove('hidden');
-  notesCard.classList.remove('hidden');
-  reconcileCard.classList.remove('hidden');
-  markStep(2, 'done');
-  markStep(3, 'active');
-  statusCompare.textContent = `Done — ${diffs.length} difference(s) found.`;
-});
-
-function renderDiffTable(diffs){
-  if(diffs.length === 0){
-    diffSummary.textContent = 'No differences — SI and HR files match exactly.';
-    diffTable.innerHTML = '';
-    return;
-  }
-  diffSummary.textContent = `${diffs.length} difference(s) between SI and HR:`;
-  let html = '<tr><th>Employee</th><th>Day</th><th>SI value</th><th>HR value</th></tr>';
-  diffs.forEach(d => {
-    html += `<tr class="diffrow"><td class="name">${d.name}</td><td>${d.day}</td>
-      <td><span class="badge si">SI</span> ${d.si}</td><td><span class="badge hr">HR</span> ${d.hr}</td></tr>`;
-  });
-  diffTable.innerHTML = html;
+  return rows;
 }
 
-// ---------- Detect approval notes and match to employees ----------
-function normalizeCode(s){
-  return String(s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+function renderTable(rows){
+  const host = document.getElementById('tableHost');
+  if(!rows.length){ host.innerHTML = '<div class="empty-hint">No employees found.</div>'; return; }
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  lastHeaders.forEach(h=> html += '<th>'+h+'</th>');
+  html += '</tr></thead><tbody>';
+  const gt = {basicTh:0,vdaTh:0,teTh:0,payDays:0,lop:0,basic:0,vda:0,otDays:0,otAmt:0,te:0,teWoOt:0,pf:0,esi:0,pt:0,totDed:0,net:0,pfEarn:0};
+  rows.forEach(r=>{
+    html += '<tr>'+
+      td(r.code,1)+td(r.name,1)+td(r.monthYear,1)+td(r.desig,1)+td(r.doj,1)+
+      td(r.basicTh)+td(r.vdaTh)+td(r.teTh)+
+      td(r.salCal)+td(r.lop)+td(r.payDays)+
+      td(r.basic)+td(r.vda)+td(r.otDays)+td(r.otAmt)+
+      td(r.te)+td(r.teWoOt)+
+      td(r.pf)+td(r.esi)+td(r.pt)+td(r.totDed)+td(r.net)+
+      td(r.pfEarn)+td(r.branch,1)+td(r.division,1)+
+      '</tr>';
+    ['basicTh','vdaTh','teTh','payDays','lop','basic','vda','otDays','otAmt','te','teWoOt','pf','esi','pt','totDed','net','pfEarn'].forEach(k=> gt[k]+=r[k]);
+  });
+  html += '<tr class="gtot">'+
+    td('GRAND TOTAL',1)+td('',1)+td('',1)+td('',1)+td('',1)+
+    td(gt.basicTh)+td(gt.vdaTh)+td(gt.teTh)+
+    td('')+td(gt.lop)+td(gt.payDays)+
+    td(gt.basic)+td(gt.vda)+td(gt.otDays)+td(gt.otAmt)+
+    td(gt.te)+td(gt.teWoOt)+
+    td(gt.pf)+td(gt.esi)+td(gt.pt)+td(gt.totDed)+td(gt.net)+
+    td(gt.pfEarn)+td('',1)+td('',1)+
+    '</tr>';
+  html += '</tbody></table></div>';
+  host.innerHTML = html;
+  function td(v,left){ return '<td>'+(v===undefined||v===null?'':v)+'</td>'; }
 }
 
-function detectNotes(){
-  notesByEmployee = {};
-
-  const codeToName = {};
-  siData.employees.forEach(e => {
-    if(e.code) codeToName[normalizeCode(e.code)] = e.name;
-  });
-  const names = siData.employees.map(e => e.name);
-
-  // Source 1: each employee's own REMARKS column, if filled in directly on their row --
-  // this is already tied to that specific employee, no matching needed.
-  siData.employees.forEach(e => {
-    const remarkText = typeof e.remarks === 'string' ? e.remarks.trim() : '';
-    if(remarkText && !notesByEmployee[e.name]){
-      notesByEmployee[e.name] = { text: remarkText, block: true };
-    }
-  });
-
-  // Source 2: a consolidated "Notes:-" block elsewhere in the sheet (below the totals),
-  // often with numbered "1) Emp Code-XXXX ..." sub-items referencing different employees.
-  // Break every collected note blob into individual lines / numbered sub-items,
-  // since a single cell can contain "Notes:-" followed by several "1) Emp Code-... "
-  // entries for different employees that each need to be matched separately.
-  const lines = [];
-  siData.notes.forEach(blob => {
-    blob.split(/\r?\n/).forEach(rawLine => {
-      // a line might itself contain multiple numbered items run together
-      const parts = rawLine.split(/(?=\d+\)\s*Emp\.?\s*Code)/i).map(s => s.trim()).filter(Boolean);
-      lines.push(...(parts.length ? parts : [rawLine.trim()]));
-    });
-  });
-
-  lines.forEach(line => {
-    if(!line) return;
-    if(/^notes?\s*:?-?\s*$/i.test(line)) return; // skip a bare "Notes:-" header line with nothing else
-
-    let matchedName = null;
-
-    // Primary match: explicit "Emp Code-XXXX" reference -- exact and unambiguous.
-    // Accepts "Emp Code", "Emp. Code", "Employee Code", any dash variant (-,–,—) or
-    // colon as the separator, and codes that themselves contain a hyphen (e.g. PBBAD-19)
-    // by normalizing away all punctuation before comparing.
-    const codeMatch = line.match(/emp(?:loyee)?\.?\s*code\s*[-–—:]\s*([A-Za-z0-9-]+)/i);
-    if(codeMatch){
-      const code = normalizeCode(codeMatch[1]);
-      if(codeToName[code]) matchedName = codeToName[code];
-    }
-
-    // Fallback: match by a significant word from the employee's name
-    if(!matchedName){
-      for(const name of names){
-        const nameWords = name.split(' ').filter(w => w.length > 3);
-        if(nameWords.some(w => line.toUpperCase().includes(w.toUpperCase()))){
-          matchedName = name;
-          break;
-        }
-      }
-    }
-
-    if(matchedName && !notesByEmployee[matchedName]){
-      // Default to blocking OT adjustment -- a note/remark tied to a specific employee
-      // means their attendance has an explanation on file, so don't auto-adjust it.
-      notesByEmployee[matchedName] = { text: line, block: true };
-    }
-  });
-
-  renderNotes();
-}
-
-function renderNotes(){
-  const names = Object.keys(notesByEmployee);
-  if(names.length === 0){
-    notesList.innerHTML = '<div style="font-size:13px;color:var(--muted);">No approval notes detected.</div>';
-    return;
-  }
-  notesList.innerHTML = '';
-  names.forEach(name => {
-    const div = document.createElement('div');
-    div.className = 'note-item';
-    div.innerHTML = `
-      <div class="txt"><strong>${name}</strong> — ${notesByEmployee[name].text}</div>
-      <div style="font-size:11.5px; font-weight:700; color:#92400E; background:#fde68a; padding:5px 10px; border-radius:6px; flex-shrink:0; white-space:nowrap;">OT adjustment blocked</div>
-    `;
-    notesList.appendChild(div);
-  });
-}
-
-// ---------- Reconcile ----------
-reconcileBtn.addEventListener('click', () => {
-  markStep(3, 'done');
-  markStep(4, 'active');
-  const logLines = [];
-  const numDays = siData.numDays;
-
-  function countif(arr, val){ return arr.filter(v => v === val).length; }
-
-  const modifiedEmployees = siData.employees.map(emp => {
-    const days = emp.days.slice();
-    const aPositions = [];
-    for(let i = 0; i < days.length; i++) if(days[i] === 'A') aPositions.push(i);
-
-    // Derive OT credits and current PR directly from the actual day-by-day codes --
-    // never trust the sheet's own printed summary column, which can be stale or
-    // misaligned with the real day cells.
-    const ot = countif(days, 'PP') + countif(days, 'WP');
-    const pr = countif(days, 'P') + countif(days, 'PP');
-
-    if(aPositions.length === 0){
-      return { ...emp, days };
-    }
-
-    const note = notesByEmployee[emp.name];
-    const usableOT = note ? 0 : ot; // Rule: any note tied to this employee overrides everything else — no OT adjustment
-    const prCap = numDays === 31 ? 27 : 26; // Rule 1/2: 31-day month caps at 27 PR days, otherwise 26
-    const roomToCap = Math.max(0, prCap - pr);
-    const adjustCount = Math.min(aPositions.length, usableOT, roomToCap);
-
-    if(adjustCount === 0){
-      const noteMsg = note ? ` — a note is on file for this employee, which overrides adjustment logic entirely` : '';
-      logLines.push(`<span class="warn">${emp.name}: no adjustment${noteMsg} (available OT=${usableOT} [from day cells: PP=${countif(days,'PP')}, WP=${countif(days,'WP')}], room to ${prCap}=${roomToCap}, A count=${aPositions.length})</span>`);
-      return { ...emp, days };
-    }
-
-    aPositions.slice(0, adjustCount).forEach(pos => { days[pos] = 'P'; });
-
-    let spent = 0;
-    for(let i = 0; i < days.length && spent < adjustCount; i++){
-      if(days[i] === 'PP'){ days[i] = 'P'; spent++; }
-    }
-    let wpUsedDays = [];
-    for(let i = 0; i < days.length && spent < adjustCount; i++){
-      if(days[i] === 'WP'){ days[i] = 'WO'; spent++; wpUsedDays.push(i+1); }
-    }
-
-    logLines.push(`<span class="ok">${emp.name}: converted ${adjustCount} 'A' day(s) (day ${aPositions.slice(0,adjustCount).map(p=>p+1).join(', ')}) to P, spent ${spent} OT credit(s)${wpUsedDays.length ? ` (incl. WP→WO on day ${wpUsedDays.join(', ')})` : ''}.</span>`);
-
-    return { ...emp, days };
-  });
-
-  finalModified = { ...siData, employees: modifiedEmployees };
-
-  reconcileLog.innerHTML = logLines.join('<br>');
-  reconcileLog.classList.remove('hidden');
-  downloadBtn.classList.remove('hidden');
-  renderWOReview(finalModified);
-  renderFinalPreview(finalModified);
-  previewCard.classList.remove('hidden');
-  markStep(4, 'done');
-  markStep(5, 'active');
-});
-
-// ---------- Rule 3 & 4: flag questionable WO days for manual review ----------
-const MONTH_NAMES_LOWER = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-
-// Try to determine which calendar month/year this sheet actually represents,
-// so a DOJ's full date (not just its day-of-month) can be checked properly.
-function inferSheetMonthYear(sheetData){
-  const row2 = sheetData.rows[1] || [];
-  const firstDayCell = row2[sheetData.DAY_START];
-  if(firstDayCell instanceof Date){
-    return { month: firstDayCell.getMonth(), year: firstDayCell.getFullYear() };
-  }
-  for(const row of sheetData.rows){
-    if(!row) continue;
-    for(const cell of row){
-      if(typeof cell === 'string'){
-        const m = cell.match(/month\s*:?-?\s*([A-Za-z]+)[\s,]+(\d{4})/i);
-        if(m){
-          const idx = MONTH_NAMES_LOWER.indexOf(m[1].toLowerCase());
-          if(idx >= 0) return { month: idx, year: parseInt(m[2], 10) };
-        }
-      }
-    }
-  }
-  return null; // couldn't determine — be conservative, don't guess
-}
-
-function detectWOFlags(sheetData){
-  const { employees, numDays } = sheetData;
-  const flags = [];
-  const sheetMonthYear = inferSheetMonthYear(sheetData);
-
-  employees.forEach((emp, empIndex) => {
-    const days = emp.days;
-
-    // Rule 3: WO should follow 6 days of work in that week. Flag if the 6 days
-    // immediately before a WO show heavy absence and barely any work.
-    for(let p = 0; p < days.length; p++){
-      if(days[p] !== 'WO') continue;
-      const windowStart = Math.max(0, p - 6);
-      const window = days.slice(windowStart, p);
-      if(window.length < 6){
-        flags.push({
-          empIndex, dayIndex: p, employeeName: emp.name,
-          reason: `Only ${window.length} day(s) of data before this WO in the current month — check the previous month's attendance to confirm the 6-day rule.`
-        });
-        continue;
-      }
-      const worked = window.filter(v => v === 'P' || v === 'PP').length;
-      const absent = window.filter(v => v === 'A').length;
-      if(worked <= 1 && absent >= 4){
-        flags.push({
-          empIndex, dayIndex: p, employeeName: emp.name,
-          reason: `Worked only ${worked} of the preceding 6 days (absent ${absent}) — WO may not be earned per the 6-day-work rule.`
-        });
-      }
-    }
-
-    // Rule 4: WO should not fall on the employee's date of joining — but this only makes
-    // sense if the DOJ's full date (day + month + year) actually falls within the month
-    // this sheet represents. A DOJ of 25-Nov-2024 sharing day-of-month 25 with an April
-    // 2026 sheet is not the same date and must NOT be flagged.
-    if(emp.doj instanceof Date && sheetMonthYear){
-      const dojDay = emp.doj.getDate();
-      const dojMonth = emp.doj.getMonth();
-      const dojYear = emp.doj.getFullYear();
-      const sameMonth = dojMonth === sheetMonthYear.month && dojYear === sheetMonthYear.year;
-      if(sameMonth && dojDay >= 1 && dojDay <= numDays && days[dojDay - 1] === 'WO'){
-        flags.push({
-          empIndex, dayIndex: dojDay - 1, employeeName: emp.name,
-          reason: `Weekly-off falls on this employee's date of joining (day ${dojDay}) — new joiners typically shouldn't have a WO before working.`
-        });
-      }
-    }
-
-    // Rule 5: a WO immediately followed by absence, in a week with heavy absence overall,
-    // is a common sign the WO was actually mislabeled and should be A instead — e.g. the
-    // employee was already unwell/absent starting right at what got recorded as their WO.
-    for(let p = 0; p < days.length; p++){
-      if(days[p] !== 'WO') continue;
-      const followedByAbsence = days[p + 1] === 'A';
-      if(!followedByAbsence) continue;
-      const weekOfWO = Math.floor(p / 7);
-      const weekStart = weekOfWO * 7;
-      const weekEnd = Math.min(weekStart + 7, days.length);
-      const weekAbsences = days.slice(weekStart, weekEnd).filter(v => v === 'A').length;
-      if(weekAbsences >= 3){
-        flags.push({
-          empIndex, dayIndex: p, employeeName: emp.name,
-          reason: `This WO (day ${p + 1}) is immediately followed by an absent day, and that week shows ${weekAbsences} absences overall — likely should be marked A instead of WO.`,
-          suggested: 'A'
-        });
-      }
-    }
-  });
-
-  return flags;
-
-}
-
-function renderWOReview(sheetData){
-  const flags = detectWOFlags(sheetData);
-  woReviewTag.textContent = `${flags.length} flagged`;
-  if(flags.length === 0){
-    woReviewCard.classList.add('hidden');
-    return;
-  }
-  woReviewCard.classList.remove('hidden');
-
-  let html = '<tr><th style="text-align:left;">Employee</th><th>Day</th><th style="text-align:left;">Reason</th><th>Set to</th></tr>';
-  flags.forEach((f, i) => {
-    const suggested = f.suggested || 'WO';
-    const opt = (val, label) => `<option value="${val}" ${suggested === val ? 'selected' : ''}>${label}</option>`;
-    html += `<tr id="woflag-${i}">
-      <td class="name">${f.employeeName}</td>
-      <td>${f.dayIndex + 1}</td>
-      <td style="text-align:left; font-size:11.5px; color:var(--text-soft);">${f.reason}</td>
-      <td>
-        <select data-emp="${f.empIndex}" data-day="${f.dayIndex}" style="font-size:12.5px; padding:5px 8px; border:1px solid var(--border); border-radius:6px;">
-          ${opt('WO', 'WO (keep)')}
-          ${opt('A', 'A (absent)')}
-          ${opt('P', 'P (present)')}
-        </select>
-      </td>
-    </tr>`;
-    // apply the suggested value immediately so the preview/download reflect it without
-    // requiring the user to manually re-select the already-highlighted option
-    if(f.suggested){
-      sheetData.employees[f.empIndex].days[f.dayIndex] = f.suggested;
-    }
-  });
-  woReviewTable.innerHTML = html;
-
-  woReviewTable.querySelectorAll('select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
-      const empIdx = Number(e.target.dataset.emp);
-      const dayIdx = Number(e.target.dataset.day);
-      finalModified.employees[empIdx].days[dayIdx] = e.target.value;
-      renderFinalPreview(finalModified);
-    });
-  });
-}
-
-// ---------- Render final modified attendance in the Attendance Sheet template layout ----------
-function renderFinalPreview(sheetData){
-  const { employees, numDays } = sheetData;
-
-  function countif(arr, val){ return arr.filter(v => v === val).length; }
-  function computeTotals(days){
-    const pr = countif(days,'P') + countif(days,'PP');
-    const wo = countif(days,'WO') + countif(days,'WP');
-    const tour = countif(days,'T');
-    const ab = countif(days,'A') + countif(days,'L');
-    const ot = countif(days,'PP') + countif(days,'WP');
-    const month = pr + wo + tour + ab;
-    return { pr, wo, tour, ab, ot, month };
-  }
-
-  let html = '<tr><th>SN</th><th>Emp Code</th><th style="text-align:left;">Name</th><th>Desig.</th>';
-  for(let d = 1; d <= numDays; d++) html += `<th>${d}</th>`;
-  html += '<th>PR</th><th>WO&nbsp;&amp;<br>FH&amp;WP</th><th>TOUR</th><th>AB</th><th>OT</th><th>MONTH</th></tr>';
-
-  employees.forEach((emp, i) => {
-    const t = computeTotals(emp.days);
-    html += `<tr><td>${i+1}</td><td>${emp.code || ''}</td><td class="name">${emp.name}</td><td>${emp.designation || ''}</td>`;
-    emp.days.forEach(v => {
-      let bg = '';
-      if(v === 'WO') bg = '#c6efce';
-      else if(v === 'PP') bg = '#ffeb9c';
-      else if(v === 'A') bg = '#ffc7ce';
-      else if(v === 'WP') bg = '#d2b48c';
-      html += `<td style="background:${bg}; font-weight:${v ? 600 : 400};">${v || ''}</td>`;
-    });
-    html += `<td style="font-weight:700;">${t.pr}</td><td>${t.wo}</td><td>${t.tour}</td><td style="font-weight:700; color:${t.ab>0?'var(--red)':'inherit'};">${t.ab}</td><td>${t.ot}</td><td>${t.month}</td></tr>`;
-  });
-
-  // ---- Totals row: PR / WO&FH&WP / TOUR / AB / OT / MONTH summed across all employees ----
-  const grand = employees.reduce((acc, emp) => {
-    const t = computeTotals(emp.days);
-    acc.pr += t.pr; acc.wo += t.wo; acc.tour += t.tour; acc.ab += t.ab; acc.ot += t.ot; acc.month += t.month;
-    return acc;
-  }, { pr:0, wo:0, tour:0, ab:0, ot:0, month:0 });
-
-  html += `<tr style="background:#fdf6c9;"><td colspan="${4 + numDays}" style="text-align:right; font-weight:700; padding-right:14px;">TOTAL</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.pr}</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.wo}</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.tour}</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.ab}</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.ot}</td>` +
-    `<td style="font-weight:700; background:#ffeb9c;">${grand.month}</td></tr>`;
-
-  previewTable.innerHTML = html;
-}
-
-// ---------- Build & download Excel ----------
-downloadBtn.addEventListener('click', async () => {
-  downloadBtn.disabled = true;
-  downloadBtn.textContent = 'Building...';
+/* ---------- Generate ---------- */
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  const genStatus = document.getElementById('genStatus');
+  genStatus.className='status'; genStatus.style.display='none';
+  if(!workbookData){ return; }
   try{
-    await buildWorkbook();
+    const {sheetName, employees, colMap} = parseAttendance(workbookData);
+    if(!employees.length) throw new Error('No employee rows found.');
+
+    const projectSel = document.getElementById('projectSelect').value;
+    const branchMap = {nagpur:'Nagpur',amritsar:'Amritsar',ahmedabad:'Ahmedabad',chennai:'Chennai',kolkata:'Kolkata',custom:'Site'};
+    const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',custom:'—'};
+
+    const cfg = {
+      zone: document.getElementById('wageZone').value,
+      salCal: document.getElementById('salCalMode').value,
+      payDays: document.getElementById('payDaysMode').value,
+      pt: Number(document.getElementById('ptFlat').value)||0,
+      monthYear: document.getElementById('monthYear').value || '—',
+      branchName: branchMap[projectSel],
+      divisionName: divMap[projectSel]
+    };
+
+    lastRegister = computeRegister(employees, cfg);
+    renderTable(lastRegister);
+    document.getElementById('rowCountBadge').style.display='inline-block';
+    document.getElementById('rowCountBadge').textContent = lastRegister.length + ' employee(s) · sheet: ' + sheetName;
+    document.getElementById('downloadRow').style.display='flex';
+    genStatus.className='status ok'; genStatus.style.display='block';
+    genStatus.textContent=employees.length+' employee(s) parsed from "'+sheetName+'" — PR='+colLetter(colMap.pr)+' WO='+colLetter(colMap.wo)+' AB='+colLetter(colMap.ab)+' OT='+colLetter(colMap.ot)+' MD='+colLetter(colMap.md)+'.';
   }catch(err){
-    console.error(err);
-    alert('Could not build the Excel file: ' + err.message);
-  }finally{
-    downloadBtn.disabled = false;
-    downloadBtn.textContent = 'Download Excel (Modified + HR)';
+    genStatus.className='status err'; genStatus.style.display='block';
+    genStatus.textContent='Error: ' + err.message;
+    document.getElementById('tableHost').innerHTML = '<div class="empty-hint">Generation failed — see message above.</div>';
+    document.getElementById('downloadRow').style.display='none';
   }
 });
 
-const GREEN = 'FFC6EFCE', YELLOW = 'FFFFEB9C', RED = 'FFFFC7CE', BROWN = 'FFD2B48C';
+/* ---------- Download full-format Excel ---------- */
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  if(!lastRegister.length) return;
+  const fullHeaders = ["Emp ID","Employee Name","Month/ Year","Designation","Date of Joining",
+    "BASIC (Th)","VDA (Th)","HRA (Th)","CONVEYANCE (Th)","SPL. ALLOW (Th)","TELEPHONE (Th)","PROJ ALLOW (Th)",
+    "MEDICAL AL (Th)","MGT ALLOW (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
+    "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)","Total Earning(Th)",
+    "Sal Cal Days","LOP AVAILED","Pay Days",
+    "BASIC","VDA","HRA","CONVEYANCE","SPL. ALLOW","TELEPHONE","PROJ ALLOW","MEDICAL AL","MGT ALLOW",
+    "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
+    "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN",
+    "Perf. Ince","NO OF H/D","OT AMT","ot hr che","OT Amount.","Total Earning","Total Earning Without OT",
+    "TDS","PF","PF.","ESI","PT","LWF","MOBILE DED","SALARY ADV","OTHER DED","Total Deduction","Net Amount",
+    "PF EARNING","ESIC SALAR","Branch","Division","Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"];
 
-function writeSheet(ws, sheetData){
-  const { rows, numDays, DAY_START, employees, presentDayRowIdx, otRowIdx, manpowerRowIdx, sidePanel } = sheetData;
-  const HEADER_FILL = 'FF2F75B5';
+  const zeroCols = new Set(["HRA (Th)","CONVEYANCE (Th)","SPL. ALLOW (Th)","TELEPHONE (Th)","PROJ ALLOW (Th)",
+    "MEDICAL AL (Th)","MGT ALLOW (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
+    "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)",
+    "HRA","CONVEYANCE","SPL. ALLOW","TELEPHONE","PROJ ALLOW","MEDICAL AL","MGT ALLOW",
+    "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
+    "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN","Perf. Ince",
+    "TDS","PF.","LWF","MOBILE DED","SALARY ADV","OTHER DED","ot hr che","OT Amount."]);
 
-  function colName(idx0){ // 0-indexed column -> Excel letters
-    let n = idx0 + 1, s = '';
-    while(n > 0){ const m = (n - 1) % 26; s = String.fromCharCode(65+m) + s; n = Math.floor((n-1)/26); }
-    return s;
-  }
+  const monthLabel = (lastRegister[0]?.monthYear || 'REGISTER').toUpperCase();
+  const aoa = [];
+  aoa.push(fullHeaders);
+  const summaryRow = new Array(fullHeaders.length).fill('');
+  summaryRow[0] = monthLabel + ' : ' + lastRegister.length + ' Item(s)';
+  aoa.push(summaryRow);
 
-  const dayEnd0 = DAY_START + numDays - 1; // 0-indexed last day col
-  const dayStartLetter = colName(DAY_START), dayEndLetter = colName(dayEnd0);
-  const lastColIdx0 = sheetData.monthIdx; // last summary column (0-indexed)
+  const gt = {}; fullHeaders.forEach(h=>gt[h]=0);
 
-  // ---- Row 1: project title, merged A1:E1, centered + bold ----
-  const titleText = (rows[0] || []).slice(0,5).find(v => v !== null && v !== undefined && v !== '') || '';
-  ws.mergeCells(1, 1, 1, 5);
-  const titleCell = ws.getCell(1, 1);
-  titleCell.value = titleText;
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  titleCell.font = { bold: true, size: 11 };
+  lastRegister.forEach(r=>{
+    const row = {};
+    fullHeaders.forEach(h=> row[h] = zeroCols.has(h) ? 0 : '');
+    row["Emp ID"]=r.code; row["Employee Name"]=r.name; row["Month/ Year"]=r.monthYear;
+    row["Designation"]=r.desig; row["Date of Joining"]=r.doj;
+    row["BASIC (Th)"]=r.basicTh; row["VDA (Th)"]=r.vdaTh;
+    row["Total Earning(Th)"]=r.teTh;
+    row["Sal Cal Days"]=r.salCal; row["LOP AVAILED"]=r.lop; row["Pay Days"]=r.payDays;
+    row["BASIC"]=r.basic; row["VDA"]=r.vda;
+    row["NO OF H/D"]=r.otDays; row["OT AMT"]=r.otAmt;
+    row["Total Earning"]=r.te; row["Total Earning Without OT"]=r.teWoOt;
+    row["PF"]=r.pf; row["ESI"]=r.esi; row["PT"]=r.pt;
+    row["Total Deduction"]=r.totDed; row["Net Amount"]=r.net;
+    row["PF EARNING"]=r.pfEarn; row["ESIC SALAR"]= r.teTh>21000?0:r.te;
+    row["Branch"]=r.branch; row["Division"]=r.division;
+    row["Bank Name"]=0; row["Bank A/c No"]=0; row["Bank IFSC"]=0; row["Date of Leaving"]=0;
 
-  // ---- Row 1 (day headers, "ddd") + Row 2 (SN/Code/... labels, day numbers "dd", summary labels) ----
-  // Row 2: full header row, all columns -- white bold text on orange-red fill
-  const row2Source = rows[1] || [];
-  for(let c = 0; c <= lastColIdx0; c++){
-    const cell = ws.getCell(2, c + 1);
-    let v = row2Source[c];
-    if(c >= DAY_START && c <= dayEnd0){
-      const dayNum = c - DAY_START + 1;
-      v = String(dayNum).padStart(2, '0'); // "dd"
-    }
-    if(v !== null && v !== undefined && v !== '') cell.value = v;
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_FILL } };
-    cell.alignment = { horizontal: 'center' };
-  }
-  // Row 1, day-header columns onward: weekday abbreviation "ddd" -- white bold on orange-red fill
-  const row1Source = rows[0] || [];
-  for(let c = DAY_START; c <= lastColIdx0; c++){
-    const cell = ws.getCell(1, c + 1);
-    let v = row1Source[c];
-    if(c >= DAY_START && c <= dayEnd0 && typeof v === 'string'){
-      v = v.slice(0,3); // "ddd"
-    }
-    if(v !== null && v !== undefined && v !== '') cell.value = v;
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_FILL } };
-    cell.alignment = { horizontal: 'center' };
-  }
+    const arow = fullHeaders.map(h=>row[h]);
+    aoa.push(arow);
 
-  employees.forEach((emp, i) => {
-    const r = emp.rowIdx + 1; // 1-indexed excel row
-    ws.getCell(r, 1).value = emp.sn;
-    ws.getCell(r, 1).font = { name: 'Arial', size: 10 };
-    ws.getCell(r, 2).value = emp.code;
-    ws.getCell(r, 3).value = emp.name;
-    ws.getCell(r, 3).font = { name: 'Arial', size: 10 };
-    ws.getCell(r, 4).value = emp.designation;
-    ws.getCell(r, 5).value = emp.doj;
-    ws.getCell(r, 5).font = { name: 'Arial', size: 10 };
-    for(let d = 0; d < numDays; d++){
-      const cell = ws.getCell(r, DAY_START + d + 1);
-      const v = emp.days[d] || '';
-      cell.value = v;
-      cell.alignment = { horizontal: 'center' };
-      cell.font = { name: 'Arial', size: 10 };
-      if(v === 'WO') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GREEN} };
-      else if(v === 'PP') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:YELLOW} };
-      else if(v === 'A') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:RED} };
-      else if(v === 'WP') cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:BROWN} };
-    }
-    const rng = `${dayStartLetter}${r}:${dayEndLetter}${r}`;
-    ws.getCell(r, sheetData.prIdx+1).value = { formula: `COUNTIF(${rng},"P")+COUNTIF(${rng},"PP")` };
-    ws.getCell(r, sheetData.woIdx+1).value = { formula: `COUNTIF(${rng},"WO")+COUNTIF(${rng},"WP")` };
-    ws.getCell(r, sheetData.tourIdx+1).value = { formula: `COUNTIF(${rng},"T")` };
-    ws.getCell(r, sheetData.abIdx+1).value = { formula: `COUNTIF(${rng},"A")+COUNTIF(${rng},"L")` };
-    ws.getCell(r, sheetData.otIdx+1).value = { formula: `COUNTIF(${rng},"PP")+COUNTIF(${rng},"WP")+2*COUNTIF(${rng},"WPP")` };
-    const prCol = colName(sheetData.prIdx), abCol = colName(sheetData.abIdx);
-    ws.getCell(r, sheetData.monthIdx+1).value = { formula: `SUM(${prCol}${r}:${abCol}${r})` };
-  });
-
-  // totals rows: PRESENT DAY / OT / MANPOWER per day column -- only when this sheet
-  // actually uses that 3-row breakdown structure (otR/manR distinct from presentR).
-  // A single combined totals row (otR === manR === presentR) has no per-day breakdown
-  // to write -- writing all three formulas into the same cells would just clobber
-  // each other, so skip that loop entirely for this layout.
-  const presentR = presentDayRowIdx + 1, otR = otRowIdx + 1, manR = manpowerRowIdx + 1;
-  const firstEmpR = employees[0].rowIdx + 1, lastEmpR = employees[employees.length-1].rowIdx + 1;
-  const hasSeparateBreakdownRows = otR !== presentR && manR !== presentR;
-
-  if(hasSeparateBreakdownRows){
-    for(let d = 0; d < numDays; d++){
-      const c = DAY_START + d + 1;
-      const cl = colName(DAY_START + d);
-      ws.getCell(presentR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"P")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")` };
-      ws.getCell(otR, c).value = { formula: `COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"PP")+COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WP")+2*COUNTIF(${cl}${firstEmpR}:${cl}${lastEmpR},"WPP")` };
-      ws.getCell(manR, c).value = { formula: `SUM(${cl}${presentR}:${cl}${otR})` };
-    }
-    ws.getCell(presentR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${presentR}:${dayEndLetter}${presentR})` };
-    ws.getCell(otR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${otR}:${dayEndLetter}${otR})` };
-    ws.getCell(manR, sheetData.spacerIdx+1).value = { formula: `SUM(${dayStartLetter}${manR}:${dayEndLetter}${manR})` };
-  }
-
-  const prCol = colName(sheetData.prIdx), woCol = colName(sheetData.woIdx), tourCol = colName(sheetData.tourIdx),
-        abCol = colName(sheetData.abIdx), otCol = colName(sheetData.otIdx), monthCol = colName(sheetData.monthIdx);
-  ws.getCell(presentR, sheetData.prIdx+1).value = { formula: `SUM(${prCol}${firstEmpR}:${prCol}${lastEmpR})` };
-  ws.getCell(presentR, sheetData.woIdx+1).value = { formula: `SUM(${woCol}${firstEmpR}:${woCol}${lastEmpR})` };
-  ws.getCell(presentR, sheetData.tourIdx+1).value = { formula: `SUM(${tourCol}${firstEmpR}:${tourCol}${lastEmpR})` };
-  ws.getCell(presentR, sheetData.abIdx+1).value = { formula: `SUM(${abCol}${firstEmpR}:${abCol}${lastEmpR})` };
-  ws.getCell(presentR, sheetData.otIdx+1).value = { formula: `SUM(${otCol}${firstEmpR}:${otCol}${lastEmpR})` };
-  ws.getCell(presentR, sheetData.monthIdx+1).value = { formula: `SUM(${monthCol}${firstEmpR}:${monthCol}${lastEmpR})` };
-
-  // Highlight the PR/WO/TOUR/AB/OT/MONTH totals cells in yellow
-  const YELLOW_TOTAL = 'FFFFEB9C';
-  [sheetData.prIdx, sheetData.woIdx, sheetData.tourIdx, sheetData.abIdx, sheetData.otIdx, sheetData.monthIdx].forEach(idx0 => {
-    const cell = ws.getCell(presentR, idx0 + 1);
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: YELLOW_TOTAL } };
-    cell.font = { bold: true };
-  });
-
-  // side panel + any remaining rows below, copied as literal values (project info / notes)
-  for(let rr = presentDayRowIdx; rr < rows.length; rr++){
-    const row = rows[rr];
-    if(!row) continue;
-    row.forEach((v, c) => {
-      if(v === null || v === undefined || v === '') return;
-      const already = ws.getCell(rr+1, c+1).value;
-      if(already === null || already === undefined) ws.getCell(rr+1, c+1).value = v;
+    fullHeaders.forEach(h=>{
+      const v = row[h];
+      if(typeof v === 'number') gt[h]+=v;
     });
-  }
-
-  // ---- Merge "Shift Schedule" label across 2 columns (B:C on its row) ----
-  for(let rr = presentDayRowIdx; rr < rows.length; rr++){
-    const row = rows[rr];
-    if(!row) continue;
-    if(typeof row[1] === 'string' && row[1].trim().toLowerCase() === 'shift schedule'){
-      try{ ws.mergeCells(rr+1, 2, rr+1, 3); }catch(e){}
-      const cell = ws.getCell(rr+1, 2);
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.font = { bold: true };
-      break;
-    }
-  }
-
-  // ---- Merge "Note" content cells across 3 columns (skip bare "Notes:-" header labels,
-  // which would otherwise get merged over and hide the actual note text sitting next to them) ----
-  for(let rr = 0; rr < rows.length; rr++){
-    const row = rows[rr];
-    if(!row) continue;
-    for(let c = 0; c < row.length; c++){
-      const v = row[c];
-      if(typeof v !== 'string') continue;
-      const isBareHeader = /^notes?\s*:?-?\s*$/i.test(v.trim());
-      const looksLikeNoteContent = /emp(?:loyee)?\.?\s*code/i.test(v) || (/note\s*:?-/i.test(v) && v.trim().length > 15);
-      if(looksLikeNoteContent && !isBareHeader){
-        try{ ws.mergeCells(rr+1, c+1, rr+1, c+3); }catch(e){}
-        const cell = ws.getCell(rr+1, c+1);
-        cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-      }
-    }
-  }
-
-  // ---- Solid thin borders: full grid across the core table, value-only below it ----
-  const lastRowUsed = ws.lastRow ? ws.lastRow.number : (rows.length);
-  const lastColUsed = lastColIdx0 + 1;
-  const coreLastRow = manpowerRowIdx + 1; // 1-indexed row of the MANPOWER/DAY totals line
-  const THIN = { style: 'thin', color: { argb: 'FF000000' } };
-  for(let r = 1; r <= lastRowUsed; r++){
-    for(let c = 1; c <= lastColUsed; c++){
-      const cell = ws.getCell(r, c);
-      const inCore = r <= coreLastRow;
-      if(inCore || (cell.value !== null && cell.value !== undefined)){
-        cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
-      }
-    }
-  }
-
-  // ---- Center-align every cell, auto-fit column width to content ----
-  ws.columns.forEach((col, i) => {
-    let maxLen = 4;
-    col.eachCell({ includeEmpty: false }, cell => {
-      cell.alignment = { ...cell.alignment, horizontal: cell.alignment?.horizontal || 'center', vertical: 'middle' };
-      let text = '';
-      if(cell.value && typeof cell.value === 'object' && cell.value.formula){
-        text = '000000'; // approximate width for computed numeric results
-      } else if(cell.value !== null && cell.value !== undefined){
-        text = String(cell.value);
-      }
-      maxLen = Math.max(maxLen, text.length);
-    });
-    col.width = Math.min(Math.max(maxLen + 2, i < 5 ? 10 : 5), i === 2 ? 26 : 20);
   });
-}
 
-async function buildWorkbook(){
-  const workbook = new ExcelJS.Workbook();
-  const wsModified = workbook.addWorksheet('Modified');
-  const wsHR = workbook.addWorksheet('HR');
+  const gtRow = fullHeaders.map(h=>{
+    if(h==="Emp ID") return "GRAND TOTAL";
+    if(["Employee Name","Month/ Year","Designation","Date of Joining","Branch","Division","Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"].includes(h)) return '';
+    return gt[h] || 0;
+  });
+  aoa.push(gtRow);
 
-  writeSheet(wsModified, finalModified);
-  writeSheet(wsHR, hrData);
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'Attendance_Reconciled.xlsx';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  markStep(5, 'done');
-}
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = fullHeaders.map(()=>({wch:13}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Salary Register');
+  const fname = 'Salary_Register_' + (lastRegister[0]?.branch||'Site') + '_' + (lastRegister[0]?.monthYear||'').replace('/','') + '.xlsx';
+  XLSX.writeFile(wb, fname);
+});
 </script>
 </body>
 </html>
