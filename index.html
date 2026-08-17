@@ -3,181 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI-9 · Salary Register Generator</title>
+<title>AI-9 | Attendance-to-Payroll Builder</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{
-    --ink:#0f1b2d;
-    --paper:#f6f4ee;
-    --ledger:#123a5e;
-    --ledger-2:#1c4f7c;
-    --brass:#b98a3d;
-    --brass-2:#d8ad64;
-    --line:#d8d2c2;
-    --ok:#2f6b45;
-    --warn:#a4432b;
+    --navy:#171d3d;
+    --navy-2:#1f2650;
+    --navy-active:#2f3b8f;
+    --blue:#3556f0;
+    --blue-2:#2542d1;
+    --paper:#f4f5fa;
+    --ink:#1a1d29;
+    --sub:#7c8091;
+    --line:#e7e8f0;
+    --ok:#1fa971;
+    --ok-bg:#e3f8ef;
+    --warn:#e14b4b;
+    --warn-bg:#fdeaea;
+    --gold:#f0a63a;
+    --gold-bg:#fdf1de;
     --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
-    --serif: 'Source Serif 4', Georgia, serif;
     --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
-  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap');
 
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
 
   .app{
     display:grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 254px 1fr;
     min-height:100vh;
   }
 
   /* LEFT RAIL */
   .rail{
-    background:var(--ledger);
-    color:#eef3f8;
-    padding:32px 26px 40px;
-    border-right:3px solid var(--brass);
+    background:var(--navy);
+    color:#c7cae0;
+    padding:26px 20px 30px;
     position:relative;
   }
-  .rail::before{
-    content:"";
-    position:absolute; top:0; right:-3px; bottom:0; width:3px;
-    background:repeating-linear-gradient(180deg, var(--brass) 0 6px, transparent 6px 12px);
-    opacity:.6;
-  }
   .rail h2{
-    font-family:var(--serif);
-    font-size:15px;
-    letter-spacing:.14em;
+    font-family:var(--sans);
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.1em;
     text-transform:uppercase;
-    color:var(--brass-2);
-    margin:0 0 22px;
-    padding-bottom:12px;
-    border-bottom:1px solid rgba(255,255,255,.18);
+    color:#8992c4;
+    margin:0 0 16px;
+    padding-bottom:0;
+    border-bottom:none;
   }
-  .steps{list-style:none;margin:0 0 34px;padding:0;counter-reset:step;}
+  .steps{list-style:none;margin:0 0 30px;padding:0;counter-reset:step;}
   .steps li{
     counter-increment:step;
     position:relative;
-    padding:0 0 20px 34px;
-    font-size:13.5px;
+    padding:0 0 16px 34px;
+    font-size:13px;
     line-height:1.5;
-    color:#d6e2ee;
+    color:#aab0d4;
+    border-radius:10px;
   }
   .steps li::before{
     content:counter(step);
     position:absolute; left:0; top:0;
     width:22px; height:22px;
-    border:1px solid var(--brass-2);
-    border-radius:50%;
-    font-family:var(--mono);
+    background:var(--navy-2);
+    border:1px solid #333c72;
+    border-radius:7px;
+    font-family:var(--sans);
+    font-weight:700;
     font-size:11px;
     display:flex; align-items:center; justify-content:center;
-    color:var(--brass-2);
+    color:#8fa0ff;
   }
   .steps li::after{
     content:"";
-    position:absolute; left:11px; top:24px; bottom:0;
+    position:absolute; left:10px; top:24px; bottom:0;
     width:1px;
-    background:rgba(255,255,255,.14);
+    background:#2a3160;
   }
   .steps li:last-child::after{display:none;}
   .steps b{color:#fff;display:block;margin-bottom:2px;font-weight:600;}
 
-  .formulas h2{margin-top:6px;}
+  .formulas h2{margin-top:4px;}
   .formula-block{
-    background:rgba(0,0,0,.18);
-    border-left:2px solid var(--brass-2);
+    background:var(--navy-2);
+    border:1px solid #2a3160;
     padding:10px 12px;
-    margin-bottom:10px;
-    border-radius:2px;
+    margin-bottom:8px;
+    border-radius:8px;
   }
   .formula-block .name{
-    font-size:11px;
+    font-size:10.5px;
+    font-weight:700;
     text-transform:uppercase;
-    letter-spacing:.08em;
-    color:var(--brass-2);
+    letter-spacing:.06em;
+    color:#8fa0ff;
     margin-bottom:4px;
   }
   .formula-block code{
     font-family:var(--mono);
-    font-size:11.5px;
-    color:#eaf1f8;
+    font-size:11px;
+    color:#d6d9ee;
     display:block;
     line-height:1.5;
     white-space:pre-wrap;
   }
 
   /* CENTER */
-  .main{padding:38px 46px 60px;max-width:1180px;}
+  .main{padding:30px 40px 60px;max-width:1240px;}
   .masthead{
-    display:flex; align-items:baseline; gap:18px;
-    border-bottom:3px double var(--ink);
-    padding-bottom:14px; margin-bottom:6px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding-bottom:22px; margin-bottom:22px;
+    text-align:center;
   }
   .masthead .tag{
-    font-family:var(--mono);
-    font-size:11px; letter-spacing:.12em;
-    background:var(--ink); color:var(--paper);
-    padding:3px 8px; border-radius:2px;
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:18px; letter-spacing:-.01em;
+    background:none; color:var(--ink);
+    padding:0; border-radius:0;
+  }
+  .masthead .pipe{
+    font-size:20px;
+    font-weight:400;
+    color:var(--sub);
   }
   .masthead h1{
-    font-family:var(--serif);
-    font-weight:700;
-    font-size:34px;
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:18px;
     margin:0;
     letter-spacing:-.01em;
+    color:var(--ink);
   }
   .masthead .sub{
-    font-family:var(--mono);
-    font-size:12px;
-    color:#6b6252;
-    margin:0 0 30px;
-    letter-spacing:.03em;
+    font-family:var(--sans);
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--sub);
+    margin:-12px 0 26px;
+    letter-spacing:.02em;
+    text-align:center;
   }
 
   .panel{
     background:#fff;
     border:1px solid var(--line);
-    border-radius:6px;
+    border-radius:14px;
     padding:24px;
-    margin-bottom:22px;
-    box-shadow:0 1px 0 rgba(0,0,0,.02);
+    margin-bottom:20px;
+    box-shadow:0 1px 2px rgba(20,25,60,.04);
   }
   .panel h3{
-    font-family:var(--serif); font-size:16px; margin:0 0 16px;
-    display:flex; align-items:center; gap:8px;
+    font-family:var(--sans); font-weight:700; font-size:15px; margin:0 0 16px;
+    display:flex; align-items:center; gap:10px;
+    color:var(--ink);
   }
   .panel h3 .num{
-    font-family:var(--mono); font-size:11px; color:var(--brass);
-    border:1px solid var(--brass); border-radius:3px; padding:1px 6px;
+    font-family:var(--sans); font-weight:700; font-size:11px; color:var(--blue);
+    background:#eaefff; border-radius:6px; padding:3px 8px;
   }
 
   .config-row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
   .field{flex:1; min-width:200px;}
   .field label{
-    display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em;
-    color:#6b6252; margin-bottom:6px; font-weight:600;
+    display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--sub); margin-bottom:7px; font-weight:600;
   }
   select, input[type=text], input[type=number]{
-    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:4px;
-    font-family:var(--sans); font-size:13.5px; background:#fdfcf9; color:var(--ink);
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:9px;
+    font-family:var(--sans); font-size:13.5px; background:var(--paper); color:var(--ink);
   }
-  select:focus, input:focus{outline:2px solid var(--ledger-2); outline-offset:1px;}
+  select:focus, input:focus{outline:2px solid var(--blue); outline-offset:1px;}
 
   #dropzone{
-    border:2px dashed var(--brass);
-    border-radius:8px;
-    padding:36px 20px;
+    border:1.5px dashed #c4c9e8;
+    border-radius:12px;
+    padding:34px 20px;
     text-align:center;
-    background:repeating-linear-gradient(135deg, rgba(185,138,61,.04) 0 10px, transparent 10px 20px);
+    background:#f8f9fd;
     cursor:pointer;
-    transition:background .15s;
+    transition:background .15s, border-color .15s;
   }
-  #dropzone.drag{background:rgba(185,138,61,.14);}
-  #dropzone .icon{font-size:30px; margin-bottom:8px;}
-  #dropzone .main-txt{font-family:var(--serif); font-size:16px; margin-bottom:4px;}
-  #dropzone .sub-txt{font-size:12.5px; color:#847a68;}
+  #dropzone.drag{background:#eef1ff; border-color:var(--blue);}
+  #dropzone .icon{font-size:28px; margin-bottom:8px;}
+  #dropzone .main-txt{font-family:var(--sans); font-weight:600; font-size:15px; margin-bottom:4px; color:var(--ink);}
+  #dropzone .sub-txt{font-size:12.5px; color:var(--sub);}
   #fileInput{display:none;}
   #fileName{
     margin-top:10px; font-family:var(--mono); font-size:12.5px; color:var(--ok);
@@ -186,47 +200,99 @@
 
   .btn{
     font-family:var(--sans); font-weight:600; font-size:13.5px;
-    padding:11px 22px; border-radius:5px; border:none; cursor:pointer;
-    transition:transform .08s, box-shadow .15s;
+    padding:11px 22px; border-radius:9px; border:none; cursor:pointer;
+    transition:transform .08s, box-shadow .15s, background .15s;
   }
   .btn:active{transform:translateY(1px);}
-  .btn-primary{background:var(--ledger); color:#fff;}
-  .btn-primary:hover{background:var(--ledger-2);}
-  .btn-primary:disabled{background:#b7c1cb; cursor:not-allowed;}
-  .btn-gold{background:var(--brass); color:#fff;}
-  .btn-gold:hover{background:var(--brass-2);}
+  .btn-primary{background:var(--blue); color:#fff;}
+  .btn-primary:hover{background:var(--blue-2);}
+  .btn-primary:disabled{background:#c7cbe6; cursor:not-allowed;}
+  .btn-gold{background:var(--ink); color:#fff;}
+  .btn-gold:hover{background:#000;}
   .btn-row{display:flex; gap:12px; margin-top:16px; align-items:center;}
 
   .status{
-    font-family:var(--mono); font-size:12px; padding:8px 12px; border-radius:4px;
+    font-family:var(--mono); font-size:12px; padding:9px 12px; border-radius:8px;
     margin-top:12px; display:none;
   }
-  .status.err{background:#fbe8e3; color:var(--warn); display:block;}
-  .status.ok{background:#e8f2ea; color:var(--ok); display:block;}
+  .status.err{background:var(--warn-bg); color:var(--warn); display:block;}
+  .status.ok{background:var(--ok-bg); color:var(--ok); display:block;}
 
   /* table */
-  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:6px;}
-  table{border-collapse:collapse; width:100%; font-size:12px; font-family:var(--mono);}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px;}
+  table{border-collapse:collapse; width:100%; font-size:12.5px; font-family:var(--sans);}
   thead th{
-    background:var(--ledger); color:#eaf1f8; text-align:right; padding:8px 10px;
-    white-space:nowrap; font-size:10.5px; letter-spacing:.02em; position:sticky; top:0;
-    text-transform:uppercase;
+    background:#fafbfe; color:var(--sub); text-align:right; padding:12px 14px;
+    white-space:nowrap; font-size:10.5px; letter-spacing:.04em; position:sticky; top:0;
+    text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--line);
   }
   thead th:nth-child(-n+4){text-align:left;}
-  tbody td{padding:7px 10px; border-bottom:1px solid #eee; white-space:nowrap; text-align:right;}
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:right; font-family:var(--mono); font-size:12.5px;}
   tbody td:nth-child(-n+4){text-align:left; font-family:var(--sans);}
-  tbody tr:nth-child(even){background:#faf9f5;}
-  tbody tr.gtot{background:var(--brass-2)!important; font-weight:700;}
-  tbody tr.gtot td{border-top:2px solid var(--brass);}
+  tbody tr{transition:background .1s;}
+  tbody tr:hover{background:#f8f9fd;}
+  tbody tr.gtot{background:#eef1ff!important; font-weight:700;}
+  tbody tr.gtot td{border-top:2px solid var(--blue); color:var(--ink);}
 
   .empty-hint{
-    text-align:center; padding:50px 20px; color:#a39a86; font-family:var(--serif); font-size:15px;
+    text-align:center; padding:50px 20px; color:var(--sub); font-family:var(--sans); font-size:14.5px;
   }
   .badge{
-    display:inline-block; font-family:var(--mono); font-size:10.5px;
-    padding:2px 7px; border-radius:10px; background:#eef1e8; color:var(--ok); margin-left:8px;
+    display:inline-block; font-family:var(--sans); font-weight:700; font-size:10.5px;
+    padding:3px 10px; border-radius:20px; background:var(--ok-bg); color:var(--ok); margin-left:8px;
   }
-  footer{margin-top:26px; font-size:11.5px; color:#a39a86; font-family:var(--mono);}
+  /* ---- Reference Data section: styled per the AI-1 warm-ledger design system ---- */
+  .ref-scope{
+    --rf-base:#F7F5F0; --rf-surface:#FFFFFF; --rf-card:#FDF0E4;
+    --rf-ink:#1A1714; --rf-ink-mid:#4A443E; --rf-ink-soft:#8A8077;
+    --rf-accent:#C8650A; --rf-accent-lo:#FCEEE2; --rf-accent-hi:#E07010;
+    --rf-border:#E2DAD0; --rf-bdr-str:#C8BFB4;
+    --rf-green:#2D6A4F; --rf-green-lo:#D8F3DC;
+    --rf-blue:#1A5CA8; --rf-blue-lo:#D8EAF8;
+    --rf-serif:'DM Serif Display', Georgia, serif;
+    background:var(--rf-base); border-radius:4px; padding:22px; margin:-6px -6px 0;
+  }
+  .ref-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .ref-tab{
+    font-family:var(--sans); font-weight:600; font-size:12px;
+    letter-spacing:.04em; text-transform:uppercase;
+    padding:8px 15px; border-radius:2px; border:1px solid #F0C9A0;
+    background:var(--rf-accent-lo); color:var(--rf-ink-mid); cursor:pointer; transition:all .15s;
+  }
+  .ref-tab:hover{background:var(--rf-accent); color:#fff; border-color:var(--rf-accent);}
+  .ref-tab.active{background:var(--rf-accent); color:#fff; border-color:var(--rf-accent);}
+  .ref-table-wrap{
+    background:var(--rf-surface); border:1px solid var(--rf-border); border-radius:3px;
+    overflow:hidden; overflow-x:auto; max-height:420px; overflow-y:auto;
+  }
+  .ref-table-wrap table.modal-tbl{width:100%; border-collapse:collapse; font-size:13px; font-family:var(--sans);}
+  .ref-table-wrap table.modal-tbl th{
+    text-align:left; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--rf-ink-soft); padding:9px 12px; border-bottom:1px solid var(--rf-border);
+    background:var(--rf-base); white-space:nowrap; position:sticky; top:0;
+  }
+  .ref-table-wrap table.modal-tbl td{
+    padding:9px 12px; border-bottom:1px solid rgba(226,218,208,.5);
+    color:var(--rf-ink); font-family:var(--mono); font-size:12.5px; white-space:nowrap;
+  }
+  .ref-table-wrap table.modal-tbl tbody tr:hover td{background:var(--rf-accent-lo);}
+  .ref-table-wrap table.modal-tbl tr:last-child td{border-bottom:none;}
+  .ref-section-title{
+    font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.12em;
+    text-transform:uppercase; margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--rf-border);
+  }
+  .ref-page-title{font-family:var(--rf-serif); font-size:20px; color:var(--rf-ink); margin:0 0 16px;}
+  .ref-note{
+    font-family:var(--sans); font-size:12.5px; color:var(--rf-ink-soft);
+    margin:0 0 14px; line-height:1.6; padding-left:2px;
+    border-left:2px solid var(--rf-accent); padding-left:12px;
+  }
+  .td-area{font-size:11px; font-weight:700; letter-spacing:.05em; padding:2px 9px; border-radius:2px; display:inline-block;}
+  .area-A{background:var(--rf-green-lo); color:var(--rf-green);}
+  .area-B{background:var(--rf-blue-lo); color:var(--rf-blue);}
+  .area-C{background:var(--rf-accent-lo); color:var(--rf-accent);}
+
+  footer{margin-top:26px; font-size:11.5px; color:var(--sub); font-family:var(--sans);}
 </style>
 </head>
 <body>
@@ -289,8 +355,8 @@
   <!-- CENTER -->
   <main class="main">
     <div class="masthead">
-      <span class="tag">AI · 9</span>
-      <h1>Salary Register Generator</h1>
+      <span class="tag">AI-9 |</span>
+      <h1>Attendance-to-Payroll Builder</h1>
     </div>
     <p class="sub">DROP ATTENDANCE → REVIEW ON SCREEN → DOWNLOAD REGISTER</p>
 
@@ -329,6 +395,7 @@
           <select id="salCalMode">
             <option value="month">Days in month</option>
             <option value="fixed26">Fixed 26</option>
+            <option value="fixed30">Fixed 30</option>
             <option value="mixed">30 (Supervisor) / 26 (others)</option>
           </select>
         </div>
@@ -340,18 +407,6 @@
             <option value="pr_wo">PR Days + WO &amp; FH &amp; WP</option>
             <option value="pr_only">PR Days only</option>
           </select>
-        </div>
-        <div class="field">
-          <label>Wage zone (Central CLC)</label>
-          <select id="wageZone">
-            <option value="A">Area A</option>
-            <option value="B">Area B</option>
-            <option value="C">Area C</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Flat PT (₹/month, 0 = none)</label>
-          <input type="number" id="ptFlat" value="0">
         </div>
       </div>
       <div class="btn-row">
@@ -370,7 +425,23 @@
       </div>
     </div>
 
-    <footer>AI-9 · Salary Register Generator — runs entirely in your browser, no data leaves this page.</footer>
+    <div class="panel">
+      <h3><span class="num">04</span> Reference Data</h3>
+      <div class="ref-scope">
+        <div class="ref-tabs" id="refTabs">
+          <button class="ref-tab active" data-ref="location">Location Map</button>
+          <button class="ref-tab" data-ref="ptax">PTax Slabs</button>
+          <button class="ref-tab" data-ref="lwf">LWF Rules</button>
+          <button class="ref-tab" data-ref="skill">Designation → Skill</button>
+          <button class="ref-tab" data-ref="clc">CLC Wage Rates</button>
+          <button class="ref-tab" data-ref="tn">Tamil Nadu Rates</button>
+          <button class="ref-tab" data-ref="haryana">Haryana Rates</button>
+        </div>
+        <div id="refContent"></div>
+      </div>
+    </div>
+
+    <footer>AI-9 · Attendance-to-Payroll Builder — runs entirely in your browser, no data leaves this page.</footer>
   </main>
 
 </div>
@@ -383,21 +454,82 @@ const CLC_RATES = {
   C: { Unskilled:[400,235], 'Semi-Skilled':[452,264], Skilled:[523,304], 'Highly Skilled':[579,339] }
 };
 
+/* Tamil Nadu State — W.E.F 01.04.2026 (Basic+DA monthly, official figures; Monthly = Daily x 30) */
+const TN_RATES = {
+  A: { Unskilled:{basic:16800,da:14769}, 'Semi-Skilled':{basic:18090,da:14769}, Skilled:{basic:18675,da:14769}, 'Highly Skilled':{basic:19215,da:14769} },
+  B: { Unskilled:{basic:13350,da:14769}, 'Semi-Skilled':{basic:17880,da:14769}, Skilled:{basic:18090,da:14769}, 'Highly Skilled':{basic:19200,da:14769} },
+  C: { Unskilled:{basic:13020,da:14769}, 'Semi-Skilled':{basic:17220,da:14769}, Skilled:{basic:17460,da:14769}, 'Highly Skilled':{basic:18345,da:14769} }
+};
+const TN_ZONE_CITIES = { A:'Chennai, Tuticorin, Coimbatore', B:'Salem, Trichy', C:'Madurai' };
+
+/* Haryana State — W.E.F 01.01.2025 (flat monthly, Emp ID prefix 'HO') */
+const HARYANA_RATES = {
+  Unskilled: 11257.12, 'Semi-Skilled': 12410.91, Skilled: 13031.47, 'Highly Skilled': 14367.21
+};
+
+/* City → CLC Area mapping (per CLC notification dated 19-Jan-2017) */
+const LOCATION_MAP = [
+  ['Ahmedabad','A'],['Bangalore','A'],['Chennai','A'],['Delhi','A'],['Gurgaon','A'],['Hyderabad','A'],
+  ['Kolkata','A'],['Lucknow','A'],['Mumbai','A'],['Nagpur','A'],['Pune','A'],['Kanpur','A'],
+  ['Amritsar','B'],['Aurangabad','B'],['Bhopal','B'],['Bhubaneshwar','B'],['Calicut / Kozhikode','B'],
+  ['Chandigarh','B'],['Coimbatore','B'],['Dehradun','B'],['Goa','B'],['Guwahati','B'],['Indore','B'],
+  ['Jaipur','B'],['Jammu','B'],['Jodhpur','B'],['Kochi','B'],['Madurai','B'],['Mangalore','B'],
+  ['Meerut','B'],['Raipur','B'],['Rajkot','B'],['Ranchi','B'],['Srinagar','B'],['Surat','B'],
+  ['Trichy / Tiruchirappalli','B'],['Trivandrum / Thiruvananthapuram','B'],['Vadodara','B'],['Varanasi','B'],
+  ['Vizag / Visakhapatnam','B'],['All other cities','C']
+];
+
+/* Designation → Skill mapping (explicit list; classifySkill() below has the fallback regex) */
+const DESIGNATION_SKILL_MAP = [
+  ['Operator-BHS','Skilled'],['Site Incharge','Highly Skilled'],['Junior Technician','Semi-Skilled'],
+  ['Technician-O&M','Skilled'],['Jr. Technician -O&M','Semi-Skilled'],['Technician','Skilled'],
+  ['Helper','Unskilled'],['Technician Cum Driver','Skilled'],['Driver/Attendant','Semi-Skilled'],
+  ['Attendant/Helper','Semi-Skilled'],['Attendant','Semi-Skilled'],['Engineer','Highly Skilled'],
+  ['Sr. Technician-O&M','Highly Skilled'],['Supervisor','Highly Skilled'],['Tech Electrical','Skilled'],
+  ['Support Staff','Unskilled'],['Tech Mechanical','Skilled']
+];
+
+/* Professional Tax slabs by state (as applicable to our current sites) */
+const PT_SLABS = {
+  Maharashtra: { note:'₹200/month if gross > ₹10,000 (₹300 in February to round annual to ₹2,500)', calc: te => te>10000?200:(te>7500?175:0) },
+  Punjab:      { note:'New Regime: ₹0 if annual income ≤ ₹3,00,000; ₹200/month if annual income > ₹3,00,000 (AY 2025-26)', calc: (te,annual) => annual>300000?200:0 },
+  Gujarat:     { note:'Slab by monthly salary — Ahmedabad location', calc: te => te>=12000?200:(te>=9000?150:(te>=6000?80:0)) },
+  'West Bengal': { note:'Slab by monthly salary', calc: te => te>40000?200:(te>25000?150:(te>15000?130:(te>10000?110:0))) },
+  'Tamil Nadu': { note:'Half-yearly slab (Chennai) — not a simple monthly flat rate; confirm treatment before applying monthly', calc: ()=>0 },
+  Haryana:     { note:'No Professional Tax levied in Haryana', calc: ()=>0 }
+};
+
+/* LWF (Labour Welfare Fund) — condition: 'none' (no wage limit), 'above' (apply only if gross > limit).
+   Haryana uses a % of gross, capped. Frequency shown is the statutory cycle (many are half-yearly/yearly,
+   not monthly) — applied here per pay-run at the employee-contribution amount per the "LWF by location" and "LWF" sheets. */
+const LWF_RULES = {
+  Maharashtra: { note:'₹25/month if gross > ₹3,000 (Half-Yearly statutory cycle — applied per pay-run here)', calc: te => te>3000?25:0 },
+  Punjab:      { note:'₹5/month, no wage limit (Monthly statutory cycle)', calc: ()=>5 },
+  Gujarat:     { note:'₹6/month, no wage limit (Half-Yearly statutory cycle — applied per pay-run here)', calc: ()=>6 },
+  'West Bengal': { note:'₹3/month if gross > ₹1,600 (Half-Yearly statutory cycle — applied per pay-run here)', calc: te => te>1600?3:0 },
+  'Tamil Nadu': { note:'₹20/month if gross > ₹15,000 (Yearly statutory cycle — applied per pay-run here)', calc: te => te>15000?20:0 },
+  Haryana:     { note:'0.2% of gross, capped at ₹34/month, no wage limit', calc: te => Math.min(Math.round(te*0.002), 34) }
+};
+
+/* Fixed LOI-based fair-wage overrides — employees paid per their Letter of Intent, not MW/CLC/TN rates.
+   Sal Cal Days = 26, Pay Days = PR Days only, per the agreed rule for these employees. */
+const FAIR_WAGE_OVERRIDES = {
+  'PBBAD22': { name:'Bhaskar Vootla', basic:21200, vda:0, hra:10600, telephone:1000, mgtAllow:7200, salCal:26, payDaysMode:'pr_only' }
+};
+
 const PROJECT_PRESETS = {
-  nagpur:    { zone:'A', salCal:'mixed',  payDays:'pr_only', pt:200 },
-  amritsar:  { zone:'B', salCal:'month',  payDays:'pr_wo',   pt:0   },
-  ahmedabad: { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:200 },
-  chennai:   { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:0   },
-  kolkata:   { zone:'A', salCal:'fixed26',payDays:'pr_wo',   pt:0   },
-  custom:    { zone:'A', salCal:'month',  payDays:'pr_wo',   pt:0   }
+  nagpur:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'mixed',  payDays:'pr_only' },
+  amritsar:  { zone:'B', wageBasis:'CLC', state:'Punjab',      salCal:'month',  payDays:'pr_wo' },
+  ahmedabad: { zone:'A', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_wo' },
+  chennai:   { zone:'A', wageBasis:'TN',  state:'Tamil Nadu',  salCal:'fixed30',payDays:'pr_wo' },
+  kolkata:   { zone:'A', wageBasis:'CLC', state:'West Bengal', salCal:'fixed26',payDays:'pr_wo' },
+  custom:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'month',  payDays:'pr_wo' }
 };
 
 document.getElementById('projectSelect').addEventListener('change', e=>{
   const p = PROJECT_PRESETS[e.target.value];
-  document.getElementById('wageZone').value = p.zone;
   document.getElementById('salCalMode').value = p.salCal;
   document.getElementById('payDaysMode').value = p.payDays;
-  document.getElementById('ptFlat').value = p.pt;
 });
 document.getElementById('projectSelect').dispatchEvent(new Event('change'));
 
@@ -478,7 +610,8 @@ function detectColumns(rows){
       else if(/^DESIGNATION/.test(v)) { map.desig = c; headerRow = Math.max(headerRow, r); }
       else if(/^(D\.?O\.?J\.?|DATE OF JOINING)/.test(v)) { map.doj = c; headerRow = Math.max(headerRow, r); }
       else if(/^PR\s*DAYS/.test(v)) { map.pr = c; headerRow = Math.max(headerRow, r); }
-      else if(/^WO/.test(v)) { map.wo = c; headerRow = Math.max(headerRow, r); }
+      else if(/^WO\s*&/.test(v)) { map.wo = c; headerRow = Math.max(headerRow, r); }
+      else if(/^TOUR/.test(v)) { map.tour = c; headerRow = Math.max(headerRow, r); }
       else if(/^AB\s*DAYS/.test(v)) { map.ab = c; headerRow = Math.max(headerRow, r); }
       else if(/^OT\s*DAYS/.test(v)) { map.ot = c; headerRow = Math.max(headerRow, r); }
       else if(/^(MONTH\s*DAYS)/.test(v)) { map.md = c; headerRow = Math.max(headerRow, r); }
@@ -541,6 +674,7 @@ function parseAttendance(wb){
     if(!code || !name) continue;
     const pr = Number(row[map.pr]) || 0;
     const wo = Number(row[map.wo]) || 0;
+    const tour = (map.tour!==undefined) ? (Number(row[map.tour]) || 0) : 0;
     const ab = Number(row[map.ab]) || 0;
     const ot = Number(row[map.ot]) || 0;
     const md = Number(row[map.md]) || 0;
@@ -554,7 +688,7 @@ function parseAttendance(wb){
       code: String(code).trim(),
       name: String(name).trim(),
       desig: String(row[map.desig]||'').trim(),
-      doj, pr, wo, ab, ot, md
+      doj, pr, wo, tour, ab, ot, md
     });
   }
   return {sheetName, employees, colMap:map};
@@ -562,49 +696,134 @@ function parseAttendance(wb){
 
 /* ---------- Register computation ---------- */
 let lastRegister = [];
-let lastHeaders = [
-  "Emp ID","Employee Name","Month/ Year","Designation","Date of Joining",
-  "BASIC (Th)","VDA (Th)","Total Earning(Th)",
+
+/* Full column order — exact sequence required for both the on-screen table and Excel download */
+const FULL_HEADERS = ["Emp ID","Employee Name","Month/ Year","Designation","Date of Joining",
+  "BASIC (Th)","VDA (Th)","HRA (Th)","CONVEYANCE (Th)","SPL. ALLOW (Th)","TELEPHONE (Th)","PROJ ALLOW (Th)",
+  "MEDICAL AL (Th)","MGT ALLOW (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
+  "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)","Total Earning(Th)",
   "Sal Cal Days","LOP AVAILED","Pay Days",
-  "BASIC","VDA","NO OF H/D","OT AMT",
-  "Total Earning","Total Earning Without OT",
-  "PF","ESI","PT","Total Deduction","Net Amount",
-  "PF EARNING","Branch","Division"
-];
+  "BASIC","VDA","HRA","CONVEYANCE","SPL. ALLOW","TELEPHONE","PROJ ALLOW","MEDICAL AL","MGT ALLOW",
+  "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
+  "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN",
+  "Perf. Ince","NO OF H/D","OT AMT","ot hr che","OT Amount.","Total Earning","Total Earning Without OT",
+  "TDS","PF","PF.","ESI","PT","LWF","MOBILE DED","SALARY ADV","OTHER DED","Total Deduction","Net Amount",
+  "PF EARNING","ESIC SALAR","Branch","Division","Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"];
+
+/* Columns with no live source yet — always 0, kept as placeholders for future allowance types */
+const FULL_HEADERS_ZERO = new Set(["CONVEYANCE (Th)","SPL. ALLOW (Th)","PROJ ALLOW (Th)",
+  "MEDICAL AL (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
+  "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)",
+  "CONVEYANCE","SPL. ALLOW","PROJ ALLOW","MEDICAL AL",
+  "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
+  "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN","Perf. Ince",
+  "TDS","PF.","MOBILE DED","SALARY ADV","OTHER DED","ot hr che","OT Amount.",
+  "Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"]);
+
+const TEXT_COLUMNS = new Set(["Emp ID","Employee Name","Month/ Year","Designation","Date of Joining","Branch","Division","Bank Name","Bank A/c No","Bank IFSC"]);
+
+/* Single source of truth: builds the full 71-column record from a computeRegister() row.
+   Used identically by the on-screen table and the Excel download, so they can never drift apart. */
+function buildFullRecord(r){
+  const rec = {};
+  FULL_HEADERS.forEach(h=> rec[h] = FULL_HEADERS_ZERO.has(h) ? 0 : (TEXT_COLUMNS.has(h) ? '' : 0));
+  rec["Emp ID"]=r.code; rec["Employee Name"]=r.name; rec["Month/ Year"]=r.monthYear;
+  rec["Designation"]=r.desig; rec["Date of Joining"]=r.doj;
+  rec["BASIC (Th)"]=r.basicTh; rec["VDA (Th)"]=r.vdaTh;
+  rec["HRA (Th)"]=r.hraTh||0; rec["TELEPHONE (Th)"]=r.telephoneTh||0; rec["MGT ALLOW (Th)"]=r.mgtAllowTh||0;
+  rec["Total Earning(Th)"]=r.teTh;
+  rec["Sal Cal Days"]=r.salCal; rec["LOP AVAILED"]=r.lop; rec["Pay Days"]=r.payDays;
+  rec["BASIC"]=r.basic; rec["VDA"]=r.vda;
+  rec["HRA"]=r.hra||0; rec["TELEPHONE"]=r.telephone||0; rec["MGT ALLOW"]=r.mgtAllow||0;
+  rec["NO OF H/D"]=r.otDays; rec["OT AMT"]=r.otAmt;
+  rec["Total Earning"]=r.te; rec["Total Earning Without OT"]=r.teWoOt;
+  rec["PF"]=r.pf; rec["ESI"]=r.esi; rec["PT"]=r.pt; rec["LWF"]=r.lwf||0;
+  rec["Total Deduction"]=r.totDed; rec["Net Amount"]=r.net;
+  rec["PF EARNING"]=r.pfEarn; rec["ESIC SALAR"]= r.teTh>21000?0:r.te;
+  rec["Branch"]=r.branch; rec["Division"]=r.division;
+  return rec;
+}
+
+
+/* ---------- Calendar days helper (avoids relying on the file's own, often-unreliable
+   MONTH DAYS column — which some attendance sheets shrink by absence count) ---------- */
+function daysInMonthFromLabel(label){
+  if(!label) return 30;
+  const m = String(label).trim().match(/^([A-Za-z]{3})[-/]?\s?'?(\d{2,4})$/);
+  if(!m) return 30;
+  const monthNames = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const mi = monthNames.indexOf(m[1].toLowerCase());
+  if(mi === -1) return 30;
+  let yr = parseInt(m[2],10);
+  if(yr < 100) yr += 2000;
+  return new Date(yr, mi+1, 0).getDate();
+}
 
 function computeRegister(employees, cfg){
   const rows = [];
   employees.forEach(e=>{
     const skill = classifySkill(e.desig);
-    const [dBasic, dVda] = CLC_RATES[cfg.zone][skill];
+    let basicTh, vdaTh;
+    if(cfg.wageBasis === 'TN'){
+      const r = TN_RATES[cfg.zone][skill];
+      basicTh = r.basic; vdaTh = r.da;
+    } else if(cfg.wageBasis === 'HARYANA'){
+      basicTh = HARYANA_RATES[skill]; vdaTh = 0;
+    } else {
+      const [dBasic, dVda] = CLC_RATES[cfg.zone][skill];
+      basicTh = dBasic*26; vdaTh = dVda*26;
+    }
+
+    // Fixed LOI-based fair-wage override (e.g. Bhaskar Vootla, PBBAD22 — not on MW/CLC/TN rates)
+    const fairWage = FAIR_WAGE_OVERRIDES[e.code];
+    let hraTh = 0, telephoneTh = 0, mgtAllowTh = 0;
+    let salCalOverride = null, payDaysOverride = null;
+    if(fairWage){
+      basicTh = fairWage.basic; vdaTh = fairWage.vda;
+      hraTh = fairWage.hra||0; telephoneTh = fairWage.telephone||0; mgtAllowTh = fairWage.mgtAllow||0;
+      if(fairWage.salCal!==undefined) salCalOverride = fairWage.salCal;
+      if(fairWage.payDaysMode==='pr_only') payDaysOverride = e.pr;
+    }
+
+    const teTh = basicTh+vdaTh+hraTh+telephoneTh+mgtAllowTh;
 
     let salCal;
-    if(cfg.salCal === 'month') salCal = e.md || 30;
+    if(salCalOverride!==null) salCal = salCalOverride;
+    else if(cfg.salCal === 'month') salCal = daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'fixed26') salCal = 26;
+    else if(cfg.salCal === 'fixed30') salCal = 30;
     else salCal = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase()) ? 30 : 26;
 
     let payDays;
-    if(cfg.payDays === 'pr_only') payDays = e.pr;
-    else payDays = e.pr + e.wo;
+    // If PR Days = 0, employee may be on Tour/OD, which counts as Present.
+    const effectivePr = (e.pr && e.pr > 0) ? e.pr : (e.tour || 0);
+    if(payDaysOverride!==null) payDays = payDaysOverride;
+    else if(cfg.payDays === 'pr_only') payDays = effectivePr;
+    else payDays = effectivePr + e.wo;
 
-    const basicTh = dBasic*26, vdaTh = dVda*26, teTh = basicTh+vdaTh;
     const basic = Math.round(basicTh/salCal*payDays);
     const vda = Math.round(vdaTh/salCal*payDays);
+    const hra = Math.round(hraTh/salCal*payDays);
+    const telephone = Math.round(telephoneTh/salCal*payDays);
+    const mgtAllow = Math.round(mgtAllowTh/salCal*payDays);
     const otAmt = Math.round(teTh/salCal*e.ot);
-    const te = basic+vda+otAmt;
+    const te = basic+vda+hra+telephone+mgtAllow+otAmt;
     const teWoOt = te-otAmt;
     const pf = Math.round((15000*0.12)/salCal*payDays);
     const pfEarn = Math.round(15000/salCal*payDays);
     const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
-    const pt = cfg.pt || 0;
-    const totDed = pf+esi+pt;
+    const ptRule = PT_SLABS[cfg.state];
+    const pt = ptRule ? ptRule.calc(te, te*12) : 0;
+    const lwfRule = LWF_RULES[cfg.state];
+    const lwf = lwfRule ? lwfRule.calc(te) : 0;
+    const totDed = pf+esi+pt+lwf;
     const net = te-totDed;
 
     rows.push({
       code:e.code, name:e.name, monthYear:cfg.monthYear, desig:e.desig, doj:e.doj,
-      basicTh, vdaTh, teTh, salCal, lop:e.ab, payDays,
-      basic, vda, otDays:e.ot, otAmt, te, teWoOt,
-      pf, esi, pt, totDed, net, pfEarn,
+      basicTh, vdaTh, hraTh, telephoneTh, mgtAllowTh, teTh, salCal, lop:e.ab, payDays,
+      basic, vda, hra, telephone, mgtAllow, otDays:e.ot, otAmt, te, teWoOt,
+      pf, esi, pt, lwf, totDed, net, pfEarn,
       branch:cfg.branchName, division:cfg.divisionName
     });
   });
@@ -614,31 +833,20 @@ function computeRegister(employees, cfg){
 function renderTable(rows){
   const host = document.getElementById('tableHost');
   if(!rows.length){ host.innerHTML = '<div class="empty-hint">No employees found.</div>'; return; }
+  const records = rows.map(buildFullRecord);
   let html = '<div class="table-wrap"><table><thead><tr>';
-  lastHeaders.forEach(h=> html += '<th>'+h+'</th>');
+  FULL_HEADERS.forEach(h=> html += '<th>'+h+'</th>');
   html += '</tr></thead><tbody>';
-  const gt = {basicTh:0,vdaTh:0,teTh:0,payDays:0,lop:0,basic:0,vda:0,otDays:0,otAmt:0,te:0,teWoOt:0,pf:0,esi:0,pt:0,totDed:0,net:0,pfEarn:0};
-  rows.forEach(r=>{
-    html += '<tr>'+
-      td(r.code,1)+td(r.name,1)+td(r.monthYear,1)+td(r.desig,1)+td(r.doj,1)+
-      td(r.basicTh)+td(r.vdaTh)+td(r.teTh)+
-      td(r.salCal)+td(r.lop)+td(r.payDays)+
-      td(r.basic)+td(r.vda)+td(r.otDays)+td(r.otAmt)+
-      td(r.te)+td(r.teWoOt)+
-      td(r.pf)+td(r.esi)+td(r.pt)+td(r.totDed)+td(r.net)+
-      td(r.pfEarn)+td(r.branch,1)+td(r.division,1)+
-      '</tr>';
-    ['basicTh','vdaTh','teTh','payDays','lop','basic','vda','otDays','otAmt','te','teWoOt','pf','esi','pt','totDed','net','pfEarn'].forEach(k=> gt[k]+=r[k]);
+  const gt = {}; FULL_HEADERS.forEach(h=> gt[h] = TEXT_COLUMNS.has(h) ? '' : 0);
+  records.forEach(rec=>{
+    html += '<tr>' + FULL_HEADERS.map(h=> td(rec[h], TEXT_COLUMNS.has(h))).join('') + '</tr>';
+    FULL_HEADERS.forEach(h=>{ if(!TEXT_COLUMNS.has(h)) gt[h] += (rec[h]||0); });
   });
-  html += '<tr class="gtot">'+
-    td('GRAND TOTAL',1)+td('',1)+td('',1)+td('',1)+td('',1)+
-    td(gt.basicTh)+td(gt.vdaTh)+td(gt.teTh)+
-    td('')+td(gt.lop)+td(gt.payDays)+
-    td(gt.basic)+td(gt.vda)+td(gt.otDays)+td(gt.otAmt)+
-    td(gt.te)+td(gt.teWoOt)+
-    td(gt.pf)+td(gt.esi)+td(gt.pt)+td(gt.totDed)+td(gt.net)+
-    td(gt.pfEarn)+td('',1)+td('',1)+
-    '</tr>';
+  html += '<tr class="gtot">' + FULL_HEADERS.map((h,i)=>{
+    if(i===0) return td('GRAND TOTAL', true);
+    if(TEXT_COLUMNS.has(h)) return td('', true);
+    return td(gt[h], false);
+  }).join('') + '</tr>';
   html += '</tbody></table></div>';
   host.innerHTML = html;
   function td(v,left){ return '<td>'+(v===undefined||v===null?'':v)+'</td>'; }
@@ -658,10 +866,11 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
     const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',custom:'—'};
 
     const cfg = {
-      zone: document.getElementById('wageZone').value,
+      zone: PROJECT_PRESETS[projectSel].zone,
+      wageBasis: PROJECT_PRESETS[projectSel].wageBasis,
+      state: PROJECT_PRESETS[projectSel].state,
       salCal: document.getElementById('salCalMode').value,
       payDays: document.getElementById('payDaysMode').value,
-      pt: Number(document.getElementById('ptFlat').value)||0,
       monthYear: document.getElementById('monthYear').value || '—',
       branchName: branchMap[projectSel],
       divisionName: divMap[projectSel]
@@ -683,77 +892,228 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
 });
 
 /* ---------- Download full-format Excel ---------- */
-document.getElementById('downloadBtn').addEventListener('click', ()=>{
+document.getElementById('downloadBtn').addEventListener('click', async ()=>{
   if(!lastRegister.length) return;
-  const fullHeaders = ["Emp ID","Employee Name","Month/ Year","Designation","Date of Joining",
-    "BASIC (Th)","VDA (Th)","HRA (Th)","CONVEYANCE (Th)","SPL. ALLOW (Th)","TELEPHONE (Th)","PROJ ALLOW (Th)",
-    "MEDICAL AL (Th)","MGT ALLOW (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
-    "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)","Total Earning(Th)",
-    "Sal Cal Days","LOP AVAILED","Pay Days",
-    "BASIC","VDA","HRA","CONVEYANCE","SPL. ALLOW","TELEPHONE","PROJ ALLOW","MEDICAL AL","MGT ALLOW",
-    "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
-    "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN",
-    "Perf. Ince","NO OF H/D","OT AMT","ot hr che","OT Amount.","Total Earning","Total Earning Without OT",
-    "TDS","PF","PF.","ESI","PT","LWF","MOBILE DED","SALARY ADV","OTHER DED","Total Deduction","Net Amount",
-    "PF EARNING","ESIC SALAR","Branch","Division","Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"];
+  const genStatus = document.getElementById('genStatus');
+  try{
+    if(typeof ExcelJS === 'undefined'){
+      throw new Error('ExcelJS library failed to load (check your internet connection / CDN access) — cannot build the Excel file.');
+    }
 
-  const zeroCols = new Set(["HRA (Th)","CONVEYANCE (Th)","SPL. ALLOW (Th)","TELEPHONE (Th)","PROJ ALLOW (Th)",
-    "MEDICAL AL (Th)","MGT ALLOW (Th)","STATUTORY (Th)","GRATUITY (Th)","BOOK ALLOW (Th)","HELPER ALL (Th)",
-    "PERF INCEN (Th)","Perf. Ince (Th)","RET. BONUS (Th)","Retention (Th)",
-    "HRA","CONVEYANCE","SPL. ALLOW","TELEPHONE","PROJ ALLOW","MEDICAL AL","MGT ALLOW",
-    "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
-    "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Retention","ARREAR","Hardship A","PERF INCEN","Perf. Ince",
-    "TDS","PF.","LWF","MOBILE DED","SALARY ADV","OTHER DED","ot hr che","OT Amount."]);
+    const records = lastRegister.map(buildFullRecord);
+    const monthLabel = (lastRegister[0]?.monthYear || 'REGISTER').toUpperCase();
 
-  const monthLabel = (lastRegister[0]?.monthYear || 'REGISTER').toUpperCase();
-  const aoa = [];
-  aoa.push(fullHeaders);
-  const summaryRow = new Array(fullHeaders.length).fill('');
-  summaryRow[0] = monthLabel + ' : ' + lastRegister.length + ' Item(s)';
-  aoa.push(summaryRow);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Salary Register');
+    ws.views = [{ state:'frozen', ySplit:2 }];
 
-  const gt = {}; fullHeaders.forEach(h=>gt[h]=0);
+    const headerRow = ws.addRow(FULL_HEADERS);
+    headerRow.eachCell(cell=>{
+      cell.font = { bold:true, color:{argb:'FFFFFFFF'}, name:'Arial', size:9 };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1F4E78'} };
+      cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+    });
+    headerRow.height = 30;
 
-  lastRegister.forEach(r=>{
-    const row = {};
-    fullHeaders.forEach(h=> row[h] = zeroCols.has(h) ? 0 : '');
-    row["Emp ID"]=r.code; row["Employee Name"]=r.name; row["Month/ Year"]=r.monthYear;
-    row["Designation"]=r.desig; row["Date of Joining"]=r.doj;
-    row["BASIC (Th)"]=r.basicTh; row["VDA (Th)"]=r.vdaTh;
-    row["Total Earning(Th)"]=r.teTh;
-    row["Sal Cal Days"]=r.salCal; row["LOP AVAILED"]=r.lop; row["Pay Days"]=r.payDays;
-    row["BASIC"]=r.basic; row["VDA"]=r.vda;
-    row["NO OF H/D"]=r.otDays; row["OT AMT"]=r.otAmt;
-    row["Total Earning"]=r.te; row["Total Earning Without OT"]=r.teWoOt;
-    row["PF"]=r.pf; row["ESI"]=r.esi; row["PT"]=r.pt;
-    row["Total Deduction"]=r.totDed; row["Net Amount"]=r.net;
-    row["PF EARNING"]=r.pfEarn; row["ESIC SALAR"]= r.teTh>21000?0:r.te;
-    row["Branch"]=r.branch; row["Division"]=r.division;
-    row["Bank Name"]=0; row["Bank A/c No"]=0; row["Bank IFSC"]=0; row["Date of Leaving"]=0;
+    const summaryRow = ws.addRow([monthLabel + ' : ' + lastRegister.length + ' Item(s)']);
+    ws.mergeCells(2, 1, 2, FULL_HEADERS.length);
+    summaryRow.getCell(1).font = { bold:true, name:'Arial', size:10 };
+    summaryRow.getCell(1).alignment = { horizontal:'left', vertical:'middle' };
+    summaryRow.height = 18;
 
-    const arow = fullHeaders.map(h=>row[h]);
-    aoa.push(arow);
+    const gt = {}; FULL_HEADERS.forEach(h=> gt[h] = TEXT_COLUMNS.has(h) ? '' : 0);
 
-    fullHeaders.forEach(h=>{
-      const v = row[h];
-      if(typeof v === 'number') gt[h]+=v;
+    records.forEach(rec=>{
+      const arow = FULL_HEADERS.map(h=>rec[h]);
+      const xr = ws.addRow(arow);
+      xr.eachCell(cell=>{
+        cell.font = { name:'Arial', size:9 };
+        cell.alignment = { horizontal:'center' };
+      });
+      FULL_HEADERS.forEach(h=>{ if(!TEXT_COLUMNS.has(h)) gt[h] += (rec[h]||0); });
+    });
+
+    const gtRow = FULL_HEADERS.map((h,i)=> i===0 ? 'GRAND TOTAL' : (TEXT_COLUMNS.has(h) ? '' : (gt[h]||0)));
+    const gtXr = ws.addRow(gtRow);
+    gtXr.eachCell(cell=>{
+      cell.font = { bold:true, name:'Arial', size:9 };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFD9E1F2'} };
+      cell.alignment = { horizontal:'center' };
+    });
+
+    FULL_HEADERS.forEach((h,i)=>{
+      ws.getColumn(i+1).width = (h==='Employee Name') ? 24 : (h==='Designation' ? 18 : 13);
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const fname = 'Salary_Register_' + (lastRegister[0]?.branch||'Site') + '_' + (lastRegister[0]?.monthYear||'').replace('/','') + '.xlsx';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }catch(err){
+    genStatus.className='status err'; genStatus.style.display='block';
+    genStatus.textContent='Download failed: ' + err.message;
+    console.error(err);
+  }
+});
+
+/* ---------- Reference data tabs ---------- */
+function renderLocationTable(){
+  let html = '<div class="ref-section-title" style="color:var(--rf-blue);">City → CLC Area Mapping</div><div class="ref-note">Any location not listed defaults to Area C. Per CLC notification dated 19-Jan-2017.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>City</th><th>CLC Area</th></tr></thead><tbody>';
+  LOCATION_MAP.forEach(([city,area])=> html += `<tr><td>${city}</td><td><span class="td-area area-${area}">Area ${area}</span></td></tr>`);
+  html += '</tbody></table></div>';
+  return html;
+}
+/* Professional Tax full slab tables — all states (Employee PT / Monthly Rate) */
+const PTAX_TABLE = [
+  {state:'Maharashtra', location:'All locations', slabs:[
+    ['Upto 7,500','NIL','NIL'],['7,501 – 10,000 (Nil for Women)','175','175'],
+    ['10,001 & above','200','200'],['Every year Feb month','300','300']]},
+  {state:'Karnataka', location:'All locations', slabs:[
+    ['Upto 15,000','NIL','NIL'],['15,001 & above','200','200']]},
+  {state:'Andhra Pradesh', location:'All location', slabs:[
+    ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
+  {state:'Telangana', location:'All location', slabs:[
+    ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
+  {state:'West Bengal', location:'All location', slabs:[
+    ['Upto 8,500','NIL','NIL'],['8,501 – 10,000','NIL','NIL'],['10,001 – 15,000','110','110'],
+    ['15,001 – 25,000','130','130'],['25,001 – 40,000','150','150'],['40,001 & above','200','200']]},
+  {state:'Assam', location:'All locations', slabs:[
+    ['Upto 10,000','NIL','NIL'],['10,001 – 14,999','150','150'],
+    ['15,000 – 24,999','180','180'],['25,000 & above','208','208']]},
+  {state:'Gujarat', location:'Ahmedabad', slabs:[
+    ['Upto 5,999','NIL','NIL'],['6,000 – 8,999','80','80'],
+    ['9,000 – 11,999','150','150'],['12,000 & above','200','200']]},
+  {state:'Madhya Pradesh', location:'All location', slabs:[
+    ['Upto 18,750','NIL','NIL'],['18,751 – 24,999','1500','1500'],
+    ['25,000 – 33,333','2000','2000'],['33,334 & above','2500','2500']]},
+  {state:'Tripura', location:'All location', slabs:[
+    ['Upto 7,500','NIL','NIL'],['7,501 – 15,000','150','150'],['Above 15,001','208','208']]},
+  {state:'Odisha', location:'All location', slabs:[
+    ['Upto 13,333','Nil','Nil'],['13,334 – 25,000','125','125'],
+    ['25,001 & above','200','200'],['Every year Mar month','300','300']]},
+  {state:'Kerala', location:'All location', slabs:[
+    ['Upto 11,999','NIL','NIL'],['12,000 – 17,999','120','20'],['18,000 – 29,999','180','30'],
+    ['30,000 – 44,999','300','50'],['45,000 – 59,999','450','75'],['60,000 – 74,999','600','100'],
+    ['75,000 – 99,999','750','125'],['1,00,000 – 1,24,999','1000','167'],['1,25,000 & above','1250','208']]},
+  {state:'Bihar', location:'All location', slabs:[
+    ['Upto 3,00,000','NIL','NIL'],['3,00,001 – 5,00,000','1000','83'],
+    ['5,00,001 – 10,00,000','2000','167'],['More than 10 Lac','2500','208']]},
+  {state:'Manipur', location:'All location', slabs:[
+    ['Upto 50,000','NIL','NIL'],['50,001 – 75,000','1200','100'],
+    ['75,001 – 1,00,000','2000','167'],['1,00,001 – 1,25,000','2400','200'],['1,25,001 & above','2500','208']]},
+  {state:'Sikkim', location:'All location', slabs:[
+    ['Upto 20,000','NIL','NIL'],['20,001 – 30,000','125','125'],
+    ['30,001 – 40,000','150','150'],['40,001 & above','200','200']]},
+  {state:'Punjab', location:'All Location', slabs:[
+    ['Upto ₹3,00,000 Yearly (New Regime)','0','0'],['₹3,00,001 – ₹10,00,00,000 Yearly (New Regime)','200','200']]},
+  {state:'Pondicherry', location:'All location', slabs:[
+    ['Upto 99,999','NIL','NIL'],['1,00,000 – 2,00,000','250','42'],['2,00,001 – 3,00,000','500','83'],
+    ['3,00,001 – 4,00,000','750','125'],['4,00,001 – 5,00,000','1000','167'],['5,00,001 & above','1250','208']]},
+  {state:'Mizoram', location:'All location', slabs:[
+    ['Upto 5,000','NIL','NIL'],['5,001 – 8,000','75','75'],['8,001 – 10,000','120','120'],
+    ['10,001 – 12,000','150','150'],['12,001 – 15,000','180','180'],['15,001 & above','208','208']]},
+  {state:'Jharkhand', location:'All location', slabs:[
+    ['Upto 3,00,000','NIL','NIL'],['3,00,001 – 5,00,000','1200','100'],['5,00,001 – 8,00,000','1800','150'],
+    ['8,00,001 – 10,00,000','2100','175'],['10,00,000 & above','2500','208']]},
+  {state:'Meghalaya', location:'All location', slabs:[
+    ['Upto 50,000','NIL','NIL'],['50,001 – 75,000','200','17'],['75,001 – 1,00,000','300','25'],
+    ['1,00,001 – 1,50,000','500','42'],['1,50,001 – 2,00,000','750','63'],['2,00,001 – 2,50,000','1000','83'],
+    ['2,50,001 – 3,00,000','1250','104'],['3,00,001 – 3,50,000','1500','125'],['3,50,001 – 4,00,000','1800','150'],
+    ['4,00,001 – 4,50,000','2100','175'],['4,50,001 – 5,00,000','2400','200'],['5,00,000 & above','2500','208']]},
+  {state:'Nagaland', location:'All location', slabs:[
+    ['Upto 4,000','NIL','NIL'],['4,001 – 5,000','35','35'],['5,001 – 7,000','75','75'],
+    ['7,001 – 9,000','110','110'],['9,001 – 12,000','180','180'],['12,001 & above','208','208']]},
+  {state:'Tamil Nadu', location:'Chennai', slabs:[
+    ['Upto 21,000','NIL','NIL'],['21,001 – 30,000','135','23'],['30,001 – 45,000','315','53'],
+    ['45,001 – 60,000','690','115'],['60,001 – 75,000','1025','171'],['75,000 above','1250','208']]},
+];
+
+function renderLwfTable(){
+  let html = '<div class="ref-section-title" style="color:var(--rf-green);">Labour Welfare Fund (LWF) — by State</div><div class="ref-note">Employee contribution and wage-limit condition, per state. States not listed here (e.g. Assam, Bihar, Rajasthan, UP, most UTs) have no LWF at all — see the Location Applicability note below.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>State</th><th>Wage Limit Condition</th><th>Employee Contribution</th><th>Frequency</th></tr></thead><tbody>';
+  Object.entries(LWF_RULES).forEach(([state,rule])=>{
+    html += `<tr><td style="font-weight:600;">${state}</td><td colspan="3" style="font-family:var(--sans); color:var(--rf-ink-mid);">${rule.note}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  html += '<div class="ref-note" style="margin-top:12px;">LWF applicable states: Andhra Pradesh, Chhattisgarh, Goa, Gujarat, Haryana, Karnataka, Kerala, Madhya Pradesh, Maharashtra, Odisha, Punjab, Tamil Nadu, Telangana, West Bengal, Chandigarh, Delhi. NOT applicable: Arunachal Pradesh, Assam, Bihar, Himachal Pradesh, Jharkhand, Manipur, Meghalaya, Mizoram, Nagaland, Rajasthan, Sikkim, Tripura, Uttar Pradesh, Uttarakhand, and most Union Territories (Andaman & Nicobar, Dadra & Nagar Haveli, Daman & Diu, J&K, Ladakh, Lakshadweep, Puducherry).</div>';
+  return html;
+}
+function renderPtaxTable(){
+  let html = '<div class="ref-section-title" style="color:var(--rf-accent);">Professional Tax Slabs by State</div><div class="ref-note">Employee PT payable and effective monthly rate, by salary slab. Confirm before applying to a new location.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>State</th><th>Location</th><th>Salary Slab</th><th>PT Payable</th><th>Monthly Rate</th></tr></thead><tbody>';
+  PTAX_TABLE.forEach(row=>{
+    row.slabs.forEach((slab,i)=>{
+      const [range, payable, monthly] = slab;
+      if(i===0){
+        html += `<tr style="border-top:1px solid var(--rf-border);"><td rowspan="${row.slabs.length}" style="font-weight:600; vertical-align:top; padding-top:10px;">${row.state}</td><td rowspan="${row.slabs.length}" style="vertical-align:top; padding-top:10px; color:var(--rf-ink-soft); font-family:var(--sans); font-size:12px;">${row.location}</td><td>${range}</td><td>${payable}</td><td>${monthly}</td></tr>`;
+      } else {
+        html += `<tr><td>${range}</td><td>${payable}</td><td>${monthly}</td></tr>`;
+      }
     });
   });
-
-  const gtRow = fullHeaders.map(h=>{
-    if(h==="Emp ID") return "GRAND TOTAL";
-    if(["Employee Name","Month/ Year","Designation","Date of Joining","Branch","Division","Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"].includes(h)) return '';
-    return gt[h] || 0;
+  html += '</tbody></table></div>';
+  html += '<div class="ref-note" style="margin-top:12px;">Haryana levies no Professional Tax. Tamil Nadu (Chennai) PT is remitted half-yearly, not monthly — divide the slab amount accordingly.</div>';
+  return html;
+}
+function renderSkillTable(){
+  let html = '<div class="ref-section-title" style="color:#7C3AED;">Designation → Skill Mapping</div><div class="ref-note">Fallback rule: "Technician" variants = Skilled · "Helper" = Unskilled · "Supervisor/Engineer/Incharge/Manager" = Highly Skilled · others = Semi-Skilled.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>Designation</th><th>Skill</th></tr></thead><tbody>';
+  DESIGNATION_SKILL_MAP.forEach(([d,s])=> html += `<tr><td>${d}</td><td>${s}</td></tr>`);
+  html += '</tbody></table></div>';
+  return html;
+}
+function renderClcTable(){
+  let html = '<div class="ref-section-title" style="color:var(--rf-blue);">Central Govt CLC — Construction & Maintenance (Monthly = Daily × 26)</div><div class="ref-note">Daily Basic + VDA rates, Apr–Sep 2026.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>Area</th><th>Skill</th><th>Daily Basic</th><th>Daily VDA</th><th>Monthly (×26)</th></tr></thead><tbody>';
+  Object.entries(CLC_RATES).forEach(([area,skills])=>{
+    Object.entries(skills).forEach(([skill,[b,v]])=>{
+      html += `<tr><td><span class="td-area area-${area}">Area ${area}</span></td><td>${skill}</td><td>₹${b}</td><td>₹${v}</td><td>₹${(b+v)*26}</td></tr>`;
+    });
   });
-  aoa.push(gtRow);
+  html += '</tbody></table></div>';
+  return html;
+}
+function renderTnTable(){
+  let html = '<div class="ref-section-title" style="color:#7C3AED;">Tamil Nadu State — Construction & Maintenance</div><div class="ref-note">W.E.F 01.04.2026. Monthly = Daily × 30.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>Zone</th><th>Cities</th><th>Skill</th><th>Basic (Monthly)</th><th>DA (Monthly)</th><th>Total</th></tr></thead><tbody>';
+  Object.entries(TN_RATES).forEach(([zone,skills])=>{
+    Object.entries(skills).forEach(([skill,r])=>{
+      html += `<tr><td>Zone ${zone}</td><td style="font-family:var(--sans);">${TN_ZONE_CITIES[zone]}</td><td>${skill}</td><td>₹${r.basic}</td><td>₹${r.da}</td><td>₹${r.basic+r.da}</td></tr>`;
+    });
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+function renderHaryanaTable(){
+  let html = '<div class="ref-section-title" style="color:var(--rf-accent);">Haryana State — Construction & Maintenance (W.E.F. 01-01-2025) — Rule: Emp ID first 2 letters = HO</div><div class="ref-note">No Professional Tax applies in Haryana.</div>';
+  html += '<div class="ref-table-wrap"><table class="modal-tbl"><thead><tr><th>Skill</th><th>Monthly Rate</th></tr></thead><tbody>';
+  Object.entries(HARYANA_RATES).forEach(([skill,amt])=> html += `<tr><td>${skill}</td><td>₹${amt.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>`);
+  html += '</tbody></table></div>';
+  return html;
+}
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = fullHeaders.map(()=>({wch:13}));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Salary Register');
-  const fname = 'Salary_Register_' + (lastRegister[0]?.branch||'Site') + '_' + (lastRegister[0]?.monthYear||'').replace('/','') + '.xlsx';
-  XLSX.writeFile(wb, fname);
+const REF_RENDERERS = {
+  location: renderLocationTable, ptax: renderPtaxTable, lwf: renderLwfTable, skill: renderSkillTable,
+  clc: renderClcTable, tn: renderTnTable, haryana: renderHaryanaTable
+};
+
+function showRefTab(key){
+  document.querySelectorAll('.ref-tab').forEach(b=> b.classList.toggle('active', b.dataset.ref===key));
+  document.getElementById('refContent').innerHTML = REF_RENDERERS[key]();
+}
+document.getElementById('refTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.ref-tab');
+  if(!btn) return;
+  showRefTab(btn.dataset.ref);
 });
+showRefTab('location');
 </script>
 </body>
 </html>
