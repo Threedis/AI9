@@ -406,6 +406,7 @@
           <select id="payDaysMode">
             <option value="pr_wo">PR Days + WO &amp; FH &amp; WP</option>
             <option value="pr_only">PR Days only</option>
+            <option value="mixed">PR+WO (Site Incharge) / PR only (others)</option>
           </select>
         </div>
       </div>
@@ -528,7 +529,7 @@ const FAIR_WAGE_OVERRIDES = {
 };
 
 const PROJECT_PRESETS = {
-  nagpur:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'mixed',  payDays:'pr_only' },
+  nagpur:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'mixed',  payDays:'mixed' },
   amritsar:  { zone:'B', wageBasis:'CLC', state:'Punjab',      salCal:'month',  payDays:'pr_wo' },
   ahmedabad: { zone:'A', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_wo' },
   chennai:   { zone:'A', wageBasis:'TN',  state:'Tamil Nadu',  salCal:'fixed30',payDays:'pr_wo' },
@@ -807,8 +808,10 @@ function computeRegister(employees, cfg){
     let payDays;
     // If PR Days = 0, employee may be on Tour/OD, which counts as Present.
     const effectivePr = (e.pr && e.pr > 0) ? e.pr : (e.tour || 0);
+    const isSupervisorForPayDays = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase());
     if(payDaysOverride!==null) payDays = payDaysOverride;
     else if(cfg.payDays === 'pr_only') payDays = effectivePr;
+    else if(cfg.payDays === 'mixed') payDays = isSupervisorForPayDays ? (effectivePr + e.wo) : effectivePr;
     else payDays = effectivePr + e.wo;
 
     const basic = Math.round(basicTh/salCal*payDays);
