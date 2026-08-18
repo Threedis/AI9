@@ -821,7 +821,10 @@ function computeRegister(employees, cfg){
     const teWoOt = te-otAmt;
     // On fixed-26 Sal Cal Days sites, Pay Days used for PF/PF Earning is capped at 26 —
     // so PF never exceeds the statutory ceiling even if Pay Days (e.g. PR+WO) totals more than 26.
-    const pfPayDays = (cfg.salCal === 'fixed26' && payDays > 26) ? 26 : payDays;
+    // Pay Days used for PF/PF Earning is capped at Sal Cal Days — so PF never exceeds the
+    // statutory ceiling for that cycle, even if actual Pay Days (e.g. PR+WO) totals more.
+    // Applies generally: fixed-26 sites cap at 26, fixed-30 sites cap at 30, etc.
+    const pfPayDays = (payDays > salCal) ? salCal : payDays;
     const pf = Math.round((15000*0.12)/salCal*pfPayDays);
     const pfEarn = Math.round(15000/salCal*pfPayDays);
     const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
