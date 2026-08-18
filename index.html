@@ -503,13 +503,23 @@ const PT_SLABS = {
    Haryana uses a % of gross, capped. Frequency shown is the statutory cycle (many are half-yearly/yearly,
    not monthly) — applied here per pay-run at the employee-contribution amount per the "LWF by location" and "LWF" sheets. */
 const LWF_RULES = {
-  Maharashtra: { note:'₹25/month if gross > ₹3,000 (Half-Yearly statutory cycle — applied per pay-run here)', calc: te => te>3000?25:0 },
-  Punjab:      { note:'₹5/month, no wage limit (Monthly statutory cycle)', calc: ()=>5 },
-  Gujarat:     { note:'₹6/month, no wage limit (Half-Yearly statutory cycle — applied per pay-run here)', calc: ()=>6 },
-  'West Bengal': { note:'₹3/month if gross > ₹1,600 (Half-Yearly statutory cycle — applied per pay-run here)', calc: te => te>1600?3:0 },
-  'Tamil Nadu': { note:'₹20/month if gross > ₹15,000 (Yearly statutory cycle — applied per pay-run here)', calc: te => te>15000?20:0 },
-  Haryana:     { note:'0.2% of gross, capped at ₹34/month, no wage limit', calc: te => Math.min(Math.round(te*0.002), 34) }
+  Maharashtra: { note:'₹25 if gross > ₹3,000 — Half-Yearly, deducted in June & December only', months:[6,12], calc: te => te>3000?25:0 },
+  Punjab:      { note:'₹5, no wage limit — Monthly, deducted every month', months:'all', calc: ()=>5 },
+  Gujarat:     { note:'₹6, no wage limit — Half-Yearly, deducted in June & December only', months:[6,12], calc: ()=>6 },
+  'West Bengal': { note:'₹3 if gross > ₹1,600 — Half-Yearly, deducted in June & December only', months:[6,12], calc: te => te>1600?3:0 },
+  'Tamil Nadu': { note:'₹20 if gross > ₹15,000 — Yearly, deducted in December only', months:[12], calc: te => te>15000?20:0 },
+  Haryana:     { note:'0.2% of gross, capped at ₹34, no wage limit — Monthly, deducted every month', months:'all', calc: te => Math.min(Math.round(te*0.002), 34) }
 };
+
+/* Extracts the calendar month number (1-12) from labels like "Apr-26" */
+function monthNumberFromLabel(label){
+  if(!label) return null;
+  const m = String(label).trim().match(/^([A-Za-z]{3})/);
+  if(!m) return null;
+  const names = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const idx = names.indexOf(m[1].toLowerCase());
+  return idx===-1 ? null : idx+1;
+}
 
 /* Fixed LOI-based fair-wage overrides — employees paid per their Letter of Intent, not MW/CLC/TN rates.
    Sal Cal Days = 26, Pay Days = PR Days only, per the agreed rule for these employees. */
@@ -815,7 +825,9 @@ function computeRegister(employees, cfg){
     const ptRule = PT_SLABS[cfg.state];
     const pt = ptRule ? ptRule.calc(te, te*12) : 0;
     const lwfRule = LWF_RULES[cfg.state];
-    const lwf = lwfRule ? lwfRule.calc(te) : 0;
+    const currentMonth = monthNumberFromLabel(cfg.monthYear);
+    const lwfMonthApplies = lwfRule && (lwfRule.months === 'all' || (currentMonth!==null && lwfRule.months.includes(currentMonth)));
+    const lwf = lwfMonthApplies ? lwfRule.calc(te) : 0;
     const totDed = pf+esi+pt+lwf;
     const net = te-totDed;
 
