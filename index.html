@@ -493,8 +493,8 @@ const DESIGNATION_SKILL_MAP = [
 const PT_SLABS = {
   Maharashtra: { note:'₹200/month if gross > ₹10,000 (₹300 in February to round annual to ₹2,500)', calc: te => te>10000?200:(te>7500?175:0) },
   Punjab:      { note:'New Regime: ₹0 if annual income ≤ ₹3,00,000; ₹200/month if annual income > ₹3,00,000 (AY 2025-26)', calc: (te,annual) => annual>300000?200:0 },
-  Gujarat:     { note:'Slab by monthly salary — Ahmedabad location', calc: te => te>=12000?200:(te>=9000?150:(te>=6000?80:0)) },
-  'West Bengal': { note:'Slab by monthly salary', calc: te => te>40000?200:(te>25000?150:(te>15000?130:(te>10000?110:0))) },
+  Gujarat:     { note:'Revised slab: ₹0 if gross ≤ ₹12,000; ₹200/month if gross > ₹12,000', calc: te => te>12000?200:0 },
+  'West Bengal': { note:'Slab by monthly salary (revised: ₹0 up to ₹10,000)', calc: te => te>40000?200:(te>25000?150:(te>15000?130:(te>10000?110:0))) },
   'Tamil Nadu': { note:'Half-yearly slab (Chennai) — not a simple monthly flat rate; confirm treatment before applying monthly', calc: ()=>0 },
   Haryana:     { note:'No Professional Tax levied in Haryana', calc: ()=>0 }
 };
@@ -819,8 +819,11 @@ function computeRegister(employees, cfg){
     const otAmt = Math.round(teTh/salCal*e.ot);
     const te = basic+vda+hra+telephone+mgtAllow+otAmt;
     const teWoOt = te-otAmt;
-    const pf = Math.round((15000*0.12)/salCal*payDays);
-    const pfEarn = Math.round(15000/salCal*payDays);
+    // On fixed-26 Sal Cal Days sites, Pay Days used for PF/PF Earning is capped at 26 —
+    // so PF never exceeds the statutory ceiling even if Pay Days (e.g. PR+WO) totals more than 26.
+    const pfPayDays = (cfg.salCal === 'fixed26' && payDays > 26) ? 26 : payDays;
+    const pf = Math.round((15000*0.12)/salCal*pfPayDays);
+    const pfEarn = Math.round(15000/salCal*pfPayDays);
     const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
     const ptRule = PT_SLABS[cfg.state];
     const pt = ptRule ? ptRule.calc(te, te*12) : 0;
@@ -984,67 +987,63 @@ function renderLocationTable(){
 }
 /* Professional Tax full slab tables — all states (Employee PT / Monthly Rate) */
 const PTAX_TABLE = [
-  {state:'Maharashtra', location:'All locations', slabs:[
-    ['Upto 7,500','NIL','NIL'],['7,501 – 10,000 (Nil for Women)','175','175'],
-    ['10,001 & above','200','200'],['Every year Feb month','300','300']]},
-  {state:'Karnataka', location:'All locations', slabs:[
-    ['Upto 15,000','NIL','NIL'],['15,001 & above','200','200']]},
   {state:'Andhra Pradesh', location:'All location', slabs:[
     ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
-  {state:'Telangana', location:'All location', slabs:[
-    ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
-  {state:'West Bengal', location:'All location', slabs:[
-    ['Upto 8,500','NIL','NIL'],['8,501 – 10,000','NIL','NIL'],['10,001 – 15,000','110','110'],
-    ['15,001 – 25,000','130','130'],['25,001 – 40,000','150','150'],['40,001 & above','200','200']]},
   {state:'Assam', location:'All locations', slabs:[
-    ['Upto 10,000','NIL','NIL'],['10,001 – 14,999','150','150'],
-    ['15,000 – 24,999','180','180'],['25,000 & above','208','208']]},
-  {state:'Gujarat', location:'Ahmedabad', slabs:[
-    ['Upto 5,999','NIL','NIL'],['6,000 – 8,999','80','80'],
-    ['9,000 – 11,999','150','150'],['12,000 & above','200','200']]},
-  {state:'Madhya Pradesh', location:'All location', slabs:[
-    ['Upto 18,750','NIL','NIL'],['18,751 – 24,999','1500','1500'],
-    ['25,000 – 33,333','2000','2000'],['33,334 & above','2500','2500']]},
-  {state:'Tripura', location:'All location', slabs:[
-    ['Upto 7,500','NIL','NIL'],['7,501 – 15,000','150','150'],['Above 15,001','208','208']]},
-  {state:'Odisha', location:'All location', slabs:[
-    ['Upto 13,333','Nil','Nil'],['13,334 – 25,000','125','125'],
-    ['25,001 & above','200','200'],['Every year Mar month','300','300']]},
-  {state:'Kerala', location:'All location', slabs:[
-    ['Upto 11,999','NIL','NIL'],['12,000 – 17,999','120','20'],['18,000 – 29,999','180','30'],
-    ['30,000 – 44,999','300','50'],['45,000 – 59,999','450','75'],['60,000 – 74,999','600','100'],
-    ['75,000 – 99,999','750','125'],['1,00,000 – 1,24,999','1000','167'],['1,25,000 & above','1250','208']]},
+    ['Upto 15,000','Nil','Nil'],['15,001 – 25,000','180','180'],['25,000 & above','208','208']]},
   {state:'Bihar', location:'All location', slabs:[
     ['Upto 3,00,000','NIL','NIL'],['3,00,001 – 5,00,000','1000','83'],
     ['5,00,001 – 10,00,000','2000','167'],['More than 10 Lac','2500','208']]},
+  {state:'Gujarat', location:'All location', slabs:[
+    ['Upto 12,000','NIL','NIL'],['12,000 & above','200','200']]},
+  {state:'Jharkhand', location:'All location', slabs:[
+    ['Upto 3,00,000','NIL','NIL'],['3,00,001 – 5,00,000','1200','100'],['5,00,001 – 8,00,000','1800','150'],
+    ['8,00,001 – 10,00,000','2100','175'],['10,00,001 & above','2500','208']]},
+  {state:'Karnataka', location:'All locations', slabs:[
+    ['Upto 24,999','NIL','NIL'],['25,000 & above','200','200 (₹300 in Feb)']]},
+  {state:'Kerala', location:'All location', slabs:[
+    ['Upto 11,999','NIL','NIL'],['12,000 – 17,999','320','53'],['18,000 – 29,999','450','75'],
+    ['30,000 – 44,999','600','100'],['45,000 – 99,999','750','125'],
+    ['1,00,000 – 1,24,999','1000','167'],['1,25,000 & above','1250','208']]},
+  {state:'Madhya Pradesh', location:'All location', slabs:[
+    ['Upto 2,25,000','NIL','NIL'],['2,25,000 – 3,00,000','1500','125'],
+    ['3,00,001 – 4,00,000','2000','167'],['4,00,001 & above','2500','208']]},
+  {state:'Maharashtra', location:'All locations', slabs:[
+    ['Upto 7,500','NIL','NIL'],['7,501 – 10,000','175','175'],
+    ['10,001 & above','200','200 (₹300 in Feb)'],['25,001 & above (Female Employees only)','200','200 (₹300 in Feb)']]},
   {state:'Manipur', location:'All location', slabs:[
     ['Upto 50,000','NIL','NIL'],['50,001 – 75,000','1200','100'],
     ['75,001 – 1,00,000','2000','167'],['1,00,001 – 1,25,000','2400','200'],['1,25,001 & above','2500','208']]},
-  {state:'Sikkim', location:'All location', slabs:[
-    ['Upto 20,000','NIL','NIL'],['20,001 – 30,000','125','125'],
-    ['30,001 – 40,000','150','150'],['40,001 & above','200','200']]},
-  {state:'Punjab', location:'All Location', slabs:[
-    ['Upto ₹3,00,000 Yearly (New Regime)','0','0'],['₹3,00,001 – ₹10,00,00,000 Yearly (New Regime)','200','200']]},
-  {state:'Pondicherry', location:'All location', slabs:[
-    ['Upto 99,999','NIL','NIL'],['1,00,000 – 2,00,000','250','42'],['2,00,001 – 3,00,000','500','83'],
-    ['3,00,001 – 4,00,000','750','125'],['4,00,001 – 5,00,000','1000','167'],['5,00,001 & above','1250','208']]},
-  {state:'Mizoram', location:'All location', slabs:[
-    ['Upto 5,000','NIL','NIL'],['5,001 – 8,000','75','75'],['8,001 – 10,000','120','120'],
-    ['10,001 – 12,000','150','150'],['12,001 – 15,000','180','180'],['15,001 & above','208','208']]},
-  {state:'Jharkhand', location:'All location', slabs:[
-    ['Upto 3,00,000','NIL','NIL'],['3,00,001 – 5,00,000','1200','100'],['5,00,001 – 8,00,000','1800','150'],
-    ['8,00,001 – 10,00,000','2100','175'],['10,00,000 & above','2500','208']]},
   {state:'Meghalaya', location:'All location', slabs:[
     ['Upto 50,000','NIL','NIL'],['50,001 – 75,000','200','17'],['75,001 – 1,00,000','300','25'],
     ['1,00,001 – 1,50,000','500','42'],['1,50,001 – 2,00,000','750','63'],['2,00,001 – 2,50,000','1000','83'],
     ['2,50,001 – 3,00,000','1250','104'],['3,00,001 – 3,50,000','1500','125'],['3,50,001 – 4,00,000','1800','150'],
-    ['4,00,001 – 4,50,000','2100','175'],['4,50,001 – 5,00,000','2400','200'],['5,00,000 & above','2500','208']]},
+    ['4,00,001 – 4,50,000','2100','175'],['4,50,001 – 5,00,000','2400','200'],['5,00,001 & above','2500','208']]},
+  {state:'Mizoram', location:'All location', slabs:[
+    ['Upto 5,000','NIL','NIL'],['5,001 – 8,000','75','75'],['8,001 – 10,000','120','120'],
+    ['10,001 – 12,000','150','150'],['12,001 – 15,000','180','180'],
+    ['15,001 – 20,000','195','195'],['20,001 & above','208','208']]},
   {state:'Nagaland', location:'All location', slabs:[
     ['Upto 4,000','NIL','NIL'],['4,001 – 5,000','35','35'],['5,001 – 7,000','75','75'],
     ['7,001 – 9,000','110','110'],['9,001 – 12,000','180','180'],['12,001 & above','208','208']]},
+  {state:'Pondicherry', location:'All location', slabs:[
+    ['Upto 99,999','NIL','NIL'],['1,00,000 – 2,00,000','250','42'],['2,00,001 – 3,00,000','500','83'],
+    ['3,00,001 – 4,00,000','750','125'],['4,00,001 – 5,00,000','1000','167'],['5,00,001 & above','1250','208']]},
+  {state:'Punjab', location:'All Location', slabs:[
+    ['Upto ₹3,00,000 Yearly','NIL','NIL'],['Above ₹3,00,000 Yearly','200','200']]},
+  {state:'Sikkim', location:'All location', slabs:[
+    ['Upto 20,000','NIL','NIL'],['20,001 – 30,000','125','125'],
+    ['30,001 – 40,000','150','150'],['40,001 & above','200','200']]},
   {state:'Tamil Nadu', location:'Chennai', slabs:[
-    ['Upto 21,000','NIL','NIL'],['21,001 – 30,000','135','23'],['30,001 – 45,000','315','53'],
-    ['45,001 – 60,000','690','115'],['60,001 – 75,000','1025','171'],['75,000 above','1250','208']]},
+    ['Upto 21,000','NIL','NIL'],['21,001 – 30,000','180','30'],['30,001 – 45,000','425','71'],
+    ['45,001 – 60,000','930','155'],['60,001 – 75,000','1025','171'],['75,001 & above','1250','208']]},
+  {state:'Telangana', location:'All location', slabs:[
+    ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
+  {state:'Tripura', location:'All location', slabs:[
+    ['Upto 7,500','NIL','NIL'],['7,501 – 15,000','1800','150'],['Above 15,001','2496','208']]},
+  {state:'West Bengal', location:'All location', slabs:[
+    ['Upto 10,000','NIL','NIL'],['10,001 – 15,000','110','110'],
+    ['15,001 – 25,000','130','130'],['25,001 – 40,000','150','150'],['40,001 & above','200','200']]},
 ];
 
 function renderLwfTable(){
