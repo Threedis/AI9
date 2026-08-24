@@ -219,20 +219,30 @@
   .status.ok{background:var(--ok-bg); color:var(--ok); display:block;}
 
   /* table */
-  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; max-height:70vh; overflow-y:auto;}
   table{border-collapse:collapse; width:100%; font-size:12.5px; font-family:var(--sans);}
   thead th{
     background:#fafbfe; color:var(--sub); text-align:right; padding:12px 14px;
-    white-space:nowrap; font-size:10.5px; letter-spacing:.04em; position:sticky; top:0;
+    white-space:nowrap; font-size:10.5px; letter-spacing:.04em; position:sticky; top:0; z-index:3;
     text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--line);
   }
-  thead th:nth-child(-n+4){text-align:left;}
-  tbody td{padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:right; font-family:var(--mono); font-size:12.5px;}
-  tbody td:nth-child(-n+4){text-align:left; font-family:var(--sans);}
+  thead th:nth-child(-n+5){text-align:left;}
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:right; font-family:var(--mono); font-size:12.5px; background:#fff;}
+  tbody td:nth-child(-n+5){text-align:left; font-family:var(--sans);}
+  tbody tr:nth-child(even) td{background:#faf9fc;}
+  /* Freeze first 5 columns: Emp ID, Employee Name, Month/Year, Designation, DOJ */
+  thead th:nth-child(1), tbody td:nth-child(1){position:sticky; left:0; z-index:2; width:110px; min-width:110px; max-width:110px;}
+  thead th:nth-child(2), tbody td:nth-child(2){position:sticky; left:110px; z-index:2; width:170px; min-width:170px; max-width:170px;}
+  thead th:nth-child(3), tbody td:nth-child(3){position:sticky; left:280px; z-index:2; width:90px; min-width:90px; max-width:90px;}
+  thead th:nth-child(4), tbody td:nth-child(4){position:sticky; left:370px; z-index:2; width:170px; min-width:170px; max-width:170px; box-shadow:2px 0 4px -2px rgba(0,0,0,.08);}
+  thead th:nth-child(5), tbody td:nth-child(5){position:sticky; left:540px; z-index:2; width:100px; min-width:100px; max-width:100px; box-shadow:2px 0 4px -2px rgba(0,0,0,.08);}
+  thead th:nth-child(-n+5){z-index:4; background:#fafbfe;}
+  tbody tr.gtot td:nth-child(-n+5){background:#eef1ff!important;}
+  tbody tr:nth-child(even) td:nth-child(-n+5){background:#faf9fc;}
+  tbody tr:hover td:nth-child(-n+5){background:#f8f9fd;}
   tbody tr{transition:background .1s;}
-  tbody tr:hover{background:#f8f9fd;}
-  tbody tr.gtot{background:#eef1ff!important; font-weight:700;}
-  tbody tr.gtot td{border-top:2px solid var(--blue); color:var(--ink);}
+  tbody tr:hover td{background:#f8f9fd;}
+  tbody tr.gtot td{border-top:2px solid var(--blue); color:var(--ink); background:#eef1ff!important; font-weight:700;}
 
   .empty-hint{
     text-align:center; padding:50px 20px; color:var(--sub); font-family:var(--sans); font-size:14.5px;
@@ -386,8 +396,17 @@
             <option value="rajkot">BHS Rajkot</option>
             <option value="surat">BHS Surat</option>
             <option value="chandigarh">PBB Chandigarh</option>
+            <option value="bhubaneshwar">BHS Bhubaneshwar</option>
+            <option value="calicutbhs">BHS Calicut</option>
+            <option value="raipur">BHS Raipur</option>
+            <option value="varanasi">BHS Varanasi</option>
+            <option value="vizag">BHS Vizag</option>
+            <option value="necegate">NEC EGATE</option>
+            <option value="pbb21">21 PBB (multi-location)</option>
             <option value="ambulift">Ambulift (multi-location)</option>
             <option value="asft">ASFT (multi-location)</option>
+            <option value="pbb17">17 PBB (multi-location)</option>
+            <option value="pbb60">60 PBB (multi-location)</option>
             <option value="custom">Custom / New Site</option>
           </select>
         </div>
@@ -404,6 +423,8 @@
             <option value="mixed">30 (Supervisor) / 26 (others)</option>
             <option value="ambulift">Fixed 26 (Jamnagar/Kanpur) / Days in month (others)</option>
             <option value="asft">Fixed 26 (Calicut) / Days in month (others)</option>
+            <option value="17pbb">Fixed 26 (Goa/Pune) / Days in month (others)</option>
+            <option value="60pbb">Fixed 26 (Calicut/Goa) / Days in month (others)</option>
           </select>
         </div>
       </div>
@@ -416,6 +437,8 @@
             <option value="mixed">PR+WO (Site Incharge) / PR only (others)</option>
             <option value="ambulift">PR only (Jamnagar/Kanpur) / PR+WO (others)</option>
             <option value="asft">PR only (Calicut) / PR+WO (others)</option>
+            <option value="17pbb">PR only (Goa/Pune) / PR+WO (others)</option>
+            <option value="60pbb">Fixed 26 (Calicut/Goa) / PR+WO (others)</option>
           </select>
         </div>
       </div>
@@ -427,6 +450,7 @@
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" id="generateBtn" disabled>Generate Register</button>
+        <button class="btn" id="resetBtnTop" style="background:#fff; border:1px solid var(--line); color:var(--ink);">↺ Reset</button>
         <span id="genStatus" class="status"></span>
       </div>
     </div>
@@ -438,6 +462,7 @@
       </div>
       <div class="btn-row" id="downloadRow" style="display:none;">
         <button class="btn btn-gold" id="downloadBtn">⬇ Download Excel (full format)</button>
+        <button class="btn" id="resetBtn" style="background:#fff; border:1px solid var(--line); color:var(--ink);">↺ Reset</button>
       </div>
     </div>
 
@@ -540,6 +565,14 @@ const AMBULIFT_FIXED26_SITES = ['jamnagar','kanpur'];
    every other ASFT site uses actual calendar days. */
 const ASFT_FIXED26_SITES = ['calicut','kozhikode'];
 
+/* 17 PBB project — multi-location file. Goa & Pune use fixed 26-day Sal Cal Days and PR-only Pay Days;
+   every other 17 PBB site uses actual calendar days and PR+WO. */
+const PBB17_FIXED26_SITES = ['goa'];
+
+/* 60 PBB project — multi-location file. Calicut & Goa: Sal Cal Days AND Pay Days both fixed at 26
+   (a literal constant, not PR-derived, per instruction). Kolkata & all other sites: actual calendar days. */
+const PBB60_FIXED26_SITES = ['calicut','kozhikode','goa'];
+
 /* Designation → Skill mapping (explicit list; classifySkill() below has the fallback regex) */
 const DESIGNATION_SKILL_MAP = [
   ['Operator-BHS','Skilled'],['Site Incharge','Highly Skilled'],['Junior Technician','Semi-Skilled'],
@@ -583,6 +616,7 @@ const PT_SLABS = {
   } },
   Ladakh:      { note:'No Professional Tax levied (Union Territory)', calc: ()=>0 },
   'Andaman & Nicobar': { note:'No Professional Tax levied (Union Territory)', calc: ()=>0 },
+  Chhattisgarh: { note:'No Professional Tax levied in Chhattisgarh', calc: ()=>0 },
   Kerala:      { note:'Half-yearly slab (official monthly rate): ₹0 up to ₹11,999; ₹53/75/100/125/167/208 by slab above', calc: te => te>=125000?208:(te>=100000?167:(te>=45000?125:(te>=30000?100:(te>=18000?75:(te>=12000?53:0))))) },
   Tripura:     { note:'₹0 up to ₹7,500; ₹150 (₹7,501–15,000); ₹208 above ₹15,001', calc: te => te>15000?208:(te>7500?150:0) }
 };
@@ -597,7 +631,8 @@ const LWF_RULES = {
   'West Bengal': { note:'₹3 if gross > ₹1,600 — Half-Yearly, deducted in June & December only', months:[6,12], calc: te => te>1600?3:0 },
   'Tamil Nadu': { note:'₹20 if gross > ₹15,000 — Yearly, deducted in December only', months:[12], calc: te => te>15000?20:0 },
   Haryana:     { note:'0.2% of gross, capped at ₹34, no wage limit — Monthly, deducted every month', months:'all', calc: te => Math.min(Math.round(te*0.002), 34) },
-  Kerala:      { note:'₹50, no wage limit — Monthly, deducted every month', months:'all', calc: ()=>50 }
+  Kerala:      { note:'₹50, no wage limit — Monthly, deducted every month', months:'all', calc: ()=>50 },
+  Chhattisgarh:{ note:'₹15 if gross > ₹10,000 — Half-Yearly, deducted in June & December only', months:[6,12], calc: te => te>10000?15:0 }
 };
 
 /* Extracts the calendar month number (1-12) from labels like "Apr-26" */
@@ -614,7 +649,9 @@ function monthNumberFromLabel(label){
    Sal Cal Days = 26, Pay Days = PR Days only, per the agreed rule for these employees. */
 const FAIR_WAGE_OVERRIDES = {
   'PBBAD22': { name:'Bhaskar Vootla', basic:21200, vda:0, hra:10600, telephone:1000, mgtAllow:7200, salCal:26, payDaysMode:'pr_only' },
-  'BHS-S30': { name:'Nischal Shantilal Patel', basic:26000, vda:0, hra:11393, telephone:500, salCal:26, payDaysMode:'pr_only' }
+  'BHS-S30': { name:'Nischal Shantilal Patel', basic:26000, vda:0, hra:11393, telephone:500, salCal:26, payDaysMode:'pr_only' },
+  // 60 PBB Srinagar — fair wage employee (Sal Cal/Pay Days follow the normal Srinagar site rule, not fixed)
+  'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra:4800, telephone:1000 }
 };
 
 /* Fixed additional allowances (HRA/Telephone/Proj Allow etc.) stacked on top of the normal
@@ -636,6 +673,54 @@ const BANK_DATA = {
   'BHS-HR20': { bank:'OTHER BANKS', acno:'42185051202', ifsc:'SBIN0002635' },
   'BHS-HR22': { bank:'OTHER BANKS', acno:'40025127760', ifsc:'SBIN0006498' },
   'BHS-HR23': { bank:'OTHER BANKS', acno:'311210110007725', ifsc:'BKID0003112' },
+  // 17 PBB
+  'AMRT-0036': { bank:'HDFC BANK LTD.', acno:'50100335600239', ifsc:'HDFC0003770' },
+  'CO-001':    { bank:'HDFC BANK LTD.', acno:'50100128716107', ifsc:'HDFC0001588' },
+  'CO-005':    { bank:'HDFC BANK LTD.', acno:'50100456623594', ifsc:'HDFC0009372' },
+  'CO-006':    { bank:'HDFC BANK LTD.', acno:'50100128711246', ifsc:'HDFC0001588' },
+  'CO-008':    { bank:'HDFC BANK LTD.', acno:'50100129272376', ifsc:'HDFC0001588' },
+  'CO-011':    { bank:'HDFC BANK LTD.', acno:'50100456623581', ifsc:'HDFC0009372' },
+  'CO-013':    { bank:'HDFC BANK LTD.', acno:'50100472821477', ifsc:'HDFC0001068' },
+  'GOA-0004':  { bank:'HDFC BANK LTD.', acno:'50100359490851', ifsc:'HDFC0000374' },
+  'MAD-006':   { bank:'HDFC BANK LTD.', acno:'50100032082626', ifsc:'HDFC0002409' },
+  'PUN-019':   { bank:'HDFC BANK LTD.', acno:'50100401020989', ifsc:'HDFC0002054' },
+  'CALCOP003': { bank:'OTHER BANKS', acno:'67213547932', ifsc:'SBIN0006640' },
+  'CO-003':    { bank:'OTHER BANKS', acno:'278310100011252', ifsc:'UBIN0827835' },
+  'CO-010':    { bank:'OTHER BANKS', acno:'05470100031811', ifsc:'BARB0COIMBA' },
+  'CO-014':    { bank:'OTHER BANKS', acno:'20338092172', ifsc:'SBIN0017612' },
+  'CO-015':    { bank:'OTHER BANKS', acno:'0978101015732', ifsc:'CNRB0000978' },
+  'GUWH-001':  { bank:'OTHER BANKS', acno:'3728622572', ifsc:'CBIN0283216' },
+  'GUWH-009':  { bank:'OTHER BANKS', acno:'21549412175', ifsc:'IDIB000C553' },
+  'GUWH-011':  { bank:'OTHER BANKS', acno:'920010038685712', ifsc:'UTIB0004738' },
+  'GUWH-012':  { bank:'OTHER BANKS', acno:'32493999090', ifsc:'SBIN0003776' },
+  'GUWH-013':  { bank:'OTHER BANKS', acno:'63480100003049', ifsc:'BARB0VJDHCH' },
+  'GUWH-014':  { bank:'OTHER BANKS', acno:'63480100002542', ifsc:'BARB0VJDHCH' },
+  'GWHT-0016': { bank:'OTHER BANKS', acno:'352101000002616', ifsc:'IOBA0003521' },
+  'GWHT-0011': { bank:'OTHER BANKS', acno:'20239971518', ifsc:'SBIN0003776' },
+  'MAD-003':   { bank:'OTHER BANKS', acno:'110293192823', ifsc:'CNRB0005304' },
+  'MAD-009':   { bank:'OTHER BANKS', acno:'31664308431', ifsc:'SBIN0012743' },
+  'MAD-008':   { bank:'OTHER BANKS', acno:'607535110', ifsc:'IDIB000K051' },
+  'MG-005':    { bank:'OTHER BANKS', acno:'071122010001063', ifsc:'UBIN0907111' },
+  'MG-008':    { bank:'OTHER BANKS', acno:'3812500100061901', ifsc:'KARB0000381' },
+  'MG-010':    { bank:'OTHER BANKS', acno:'100089729417', ifsc:'INDB0000226' },
+  'MG-012':    { bank:'OTHER BANKS', acno:'7342500100727001', ifsc:'KARB0000734' },
+  'MG-013':    { bank:'OTHER BANKS', acno:'5267101005083', ifsc:'CNRB0005267' },
+  'MG-015':    { bank:'OTHER BANKS', acno:'0638101010953', ifsc:'CNRB0000638' },
+  'MG-016':    { bank:'OTHER BANKS', acno:'01932210029679', ifsc:'CNRB0010193' },
+  'MG-017':    { bank:'OTHER BANKS', acno:'02582200006230', ifsc:'CNRB0010258' },
+  'PUN-003':   { bank:'OTHER BANKS', acno:'59127921590', ifsc:'IDIB000B821' },
+  'PUN-010':   { bank:'OTHER BANKS', acno:'0220101073226', ifsc:'CNRB0000220' },
+  'PUN-013':   { bank:'OTHER BANKS', acno:'3270161693', ifsc:'CBIN0284131' },
+  'PUN-017':   { bank:'OTHER BANKS', acno:'80070100003604', ifsc:'BARB0VJPUAP' },
+  'PUN-018':   { bank:'OTHER BANKS', acno:'80070100003554', ifsc:'BARB0VJPUAP' },
+  'PUN-020':   { bank:'OTHER BANKS', acno:'80070100003841', ifsc:'BARB0VJPUAP' },
+  'PUN-021':   { bank:'OTHER BANKS', acno:'36831791206', ifsc:'SBIN0012336' },
+  'PUN-022':   { bank:'OTHER BANKS', acno:'37440100012836', ifsc:'BARB0VIMPUN' },
+  'PUN-025':   { bank:'OTHER BANKS', acno:'31106746721', ifsc:'SBIN0012057' },
+  'PUN-026':   { bank:'OTHER BANKS', acno:'510910110010525', ifsc:'BKID0005109' },
+  'PUN-027':   { bank:'OTHER BANKS', acno:'050100200000577', ifsc:'NKGS0000050' },
+  'PUN-028':   { bank:'OTHER BANKS', acno:'61266287859', ifsc:'SBIN0002512' },
+  'PUNEOP006': { bank:'OTHER BANKS', acno:'20246760621', ifsc:'SBIN0008784' },
 };
 
 /* Pay-basis designation overrides — employee's LOI/displayed designation stays as-is on screen,
@@ -657,12 +742,35 @@ const SKILL_DESIGNATION_OVERRIDE = {
 const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   'BHS-HR08': { name:'Yadav Sanjaykumar', hra:7579, telephone:500, projAllow:6413 },
   'BHS-HR22': { name:'Chavda Kaushal Nileshbhai', perfIncen:2000 },
+  // BHS Bhubaneshwar
+  'BHS-B001': { name:'Debasis Rout', perfIncen:4000 },
+  // BHS Calicut — Rijith gets 4000 (project rate) + 1000 (monthly approval, Kamran) instead of the ₹2000 default
+  'BHS-CAL05': { name:'Rijith T', hra:298, perfIncen:5000 },
+  // BHS Raipur
+  'BHS-R001':  { name:'Dharam Lal Sahu', hra:592 },
+  'BHS-R005':  { name:'Lokesh Ojha', perfIncen:2000 },
+  // BHS Varanasi
+  'BHSVNS-0005': { name:'Dilip Kumar Gupta', perfIncen:2000 },
+  'BHSVNS-0012': { name:'Kuldeep Yadav', hra:2792, telephone:500 },
+  // BHS Vizag
+  'BHSITC_VI04': { name:'Rayi Giri', perfIncen:2000 },
+  'BHS-V003':  { name:'Vangalapudi Rajkumar', perfIncen:2000 },
+  'BHS-V005':  { name:'Chitturi Vijay Kumar', perfIncen:4000 },
+  'BHS-V006':  { name:'Potnuru Dilip Kumar', perfIncen:2000 },
+  // 21 PBB
+  'BHPL-001':  { name:'Manoj Deshmukh', perfIncen:1000 },
+  'BHUB-001':  { name:'Amit Kumar Sahoo', perfIncen:2000 },
+  // 60 PBB Kolkata — fair wage employees (HRA stacked on top of normal MW Basic/VDA)
+  'PBBK601': { name:'Laxmidhar Nayak', hra:4556 },
+  'PBBK602': { name:'Arijit Bhattacharjee', hra:9506 },
   // BHS ITC Vijayawada — fair wage employees (HRA/Telephone/Proj Allow stacked on top of normal MW Basic/VDA)
   'BHSITC_V06': { name:'Krishna Kumar Gaur', hra:1292, telephone:500 },
   'BHSITC_V17': { name:'Gorrela Ashok', hra:3292, telephone:500 },
   'BHSITC_V18': { name:'Anil', hra:1632, telephone:500 },
   'HO-0254':    { name:'Neeraj Kumar', hra:10273, telephone:500, projAllow:9790 }, // + Relocation Bonus (Approval Based) — not applied, needs case-by-case approval amount
-  'HO-0430':    { name:'Suneel Kumar', hra:10250, telephone:750, projAllow:6660 }  // + Performance Incentive (Approval Based) — not applied, needs case-by-case approval amount
+  'HO-0430':    { name:'Suneel Kumar', hra:10250, telephone:750, projAllow:6660 },  // + Performance Incentive (Approval Based) — not applied, needs case-by-case approval amount
+  // 17 PBB Amritsar
+  'AMRT-0036':  { name:'Sunil Kumar Prajapati', perfIncen:2000 }
 };
 
 /* PF-on-actual overrides — employees whose minimum wage is below the ₹15,000 statutory ceiling,
@@ -687,7 +795,9 @@ const STATE_FOR_LOCATION = {
   leh: 'Ladakh', patna: 'Bihar', 'port blair': 'Andaman & Nicobar',
   silchar: 'Assam', siliguri: 'West Bengal',
   // ASFT multi-location sites
-  calicut: 'Kerala', kozhikode: 'Kerala', agartala: 'Tripura', indore: 'Madhya Pradesh'
+  calicut: 'Kerala', kozhikode: 'Kerala', agartala: 'Tripura', indore: 'Madhya Pradesh',
+  guwahati: 'Assam', vizag: 'Andhra Pradesh', visakhapatnam: 'Andhra Pradesh',
+  bhubaneshwar: 'Odisha', bhubaneswar: 'Odisha', raipur: 'Chhattisgarh', varanasi: 'Uttar Pradesh'
 };
 function stateForLocation(city){
   if(!city) return null;
@@ -703,8 +813,17 @@ const PROJECT_PRESETS = {
   rajkot:    { zone:'B', wageBasis:'CLC', state:'Gujarat',     salCal:'month',  payDays:'pr_wo' },
   surat:     { zone:'B', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_only', pfActualThresholdFormula:true },
   chandigarh:{ zone:'B', wageBasis:'CLC', state:'Punjab',      salCal:'month',  payDays:'pr_wo', otDivisorFixed26:true },
+  bhubaneshwar:{ zone:'B', wageBasis:'CLC', state:'Odisha',    salCal:'fixed30',payDays:'pr_wo' },
+  calicutbhs:{ zone:'B', wageBasis:'CLC', state:'Kerala',      salCal:'fixed26',payDays:'pr_only', defaultPerfIncen:2000 },
+  raipur:    { zone:'B', wageBasis:'CLC', state:'Chhattisgarh',salCal:'month',  payDays:'pr_wo' },
+  varanasi:  { zone:'B', wageBasis:'CLC', state:'Uttar Pradesh',salCal:'month', payDays:'pr_wo' },
+  vizag:     { zone:'B', wageBasis:'CLC', state:'Andhra Pradesh',salCal:'month',payDays:'pr_wo' },
+  necegate:  { zone:'B', wageBasis:'CLC', state:'Kerala',       salCal:'month', payDays:'pr_wo' },
+  pbb21:     { zone:'A', wageBasis:'CLC', state:null,           salCal:'month', payDays:'pr_wo', perEmployeeZone:true },
   ambulift:  { zone:'A', wageBasis:'CLC', state:null,          salCal:'ambulift',payDays:'ambulift', perEmployeeZone:true },
-  asft:      { zone:'B', wageBasis:'CLC', state:null,          salCal:'asft',    payDays:'asft',    perEmployeeZone:true, attendantIsUnskilled:true },
+  asft:      { zone:'B', wageBasis:'CLC', state:null,          salCal:'asft',    payDays:'asft',    perEmployeeZone:true, attendantIsUnskilled:true, useCalicutManualPt:true },
+  pbb17:     { zone:'A', wageBasis:'CLC', state:null,          salCal:'17pbb',   payDays:'17pbb',   perEmployeeZone:true },
+  pbb60:     { zone:'A', wageBasis:'CLC', state:null,          salCal:'60pbb',   payDays:'60pbb',   perEmployeeZone:true },
   custom:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'month',  payDays:'pr_wo' }
 };
 
@@ -721,6 +840,10 @@ function classifySkill(desig){
   const n = (desig||'').toUpperCase().replace(/[.\-]/g,' ');
   if(/SUPERVISOR|ENGINEER|INCHARGE|MANAGER/.test(n)) return 'Highly Skilled';
   if(/HELPER|SUPPORT/.test(n)) return 'Unskilled';
+  // "Senior/Sr Technician" is Highly Skilled — check before the general TECHNICIAN match.
+  if(/\b(SR|SENIOR)\b/.test(n) && /TECHNICIAN/.test(n)) return 'Highly Skilled';
+  // "Junior/Jr Technician" is Semi-Skilled, not Skilled — check this before the general TECHNICIAN match.
+  if(/\b(JR|JUNIOR)\b/.test(n) && /TECHNICIAN/.test(n)) return 'Semi-Skilled';
   if(/TECHNICIAN|TRAINEE|OPERATOR/.test(n)) return 'Skilled';
   return 'Semi-Skilled';
 }
@@ -798,7 +921,7 @@ function detectColumns(rows){
       else if(/^TOUR/.test(v)) { map.tour = c; headerRow = Math.max(headerRow, r); }
       else if(/^AB\s*DAYS/.test(v)) { map.ab = c; headerRow = Math.max(headerRow, r); }
       else if(/^OT\s*DAYS/.test(v)) { map.ot = c; headerRow = Math.max(headerRow, r); }
-      else if(/^(MONTH\s*DAYS)/.test(v)) { map.md = c; headerRow = Math.max(headerRow, r); }
+      else if(/^MON\w*\s*DAYS/.test(v)) { map.md = c; headerRow = Math.max(headerRow, r); }
       else if(/^REMARKS/.test(v)) { map.remarks = c; headerRow = Math.max(headerRow, r); }
     });
   }
@@ -1035,14 +1158,23 @@ function computeRegister(employees, cfg){
     if(extraAllow){
       hraTh += extraAllow.hra||0; telephoneTh += extraAllow.telephone||0; projAllowTh += extraAllow.projAllow||0;
       perfIncenTh += extraAllow.perfIncen||0;
+    } else if(cfg.defaultPerfIncen){
+      // Project-wide default incentive applied to every employee, unless they have their own
+      // specific override above (which takes precedence and replaces this default entirely).
+      perfIncenTh += cfg.defaultPerfIncen;
     }
 
-    const teTh = basicTh+vdaTh+hraTh+telephoneTh+mgtAllowTh+projAllowTh+perfIncenTh;
+    // Total Earning(Th) is the base wage figure only — HRA/Telephone/Mgt Allow/Proj Allow are part of the
+    // standard structured salary, but PERF INCEN is a variable incentive and must NOT be counted here
+    // (it would otherwise inflate the OT day-rate and ESI/PF threshold checks).
+    const teTh = basicTh+vdaTh+hraTh+telephoneTh+mgtAllowTh+projAllowTh;
 
     let salCal;
     if(salCalOverride!==null) salCal = salCalOverride;
     else if(cfg.salCal === 'ambulift') salCal = AMBULIFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'asft') salCal = ASFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
+    else if(cfg.salCal === '17pbb') salCal = PBB17_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
+    else if(cfg.salCal === '60pbb') salCal = PBB60_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'month') salCal = daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'fixed26') salCal = 26;
     else if(cfg.salCal === 'fixed30') salCal = 30;
@@ -1054,11 +1186,15 @@ function computeRegister(employees, cfg){
     const isSupervisorForPayDays = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase());
     const isAmbulift26Site = AMBULIFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase());
     const isAsft26Site = ASFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase());
+    const is17pbb26Site = PBB17_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase());
+    const is60pbb26Site = PBB60_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase());
     if(payDaysOverride!==null) payDays = payDaysOverride;
     else if(cfg.payDays === 'pr_only') payDays = effectivePr;
     else if(cfg.payDays === 'mixed') payDays = isSupervisorForPayDays ? (effectivePr + e.wo) : effectivePr;
     else if(cfg.payDays === 'ambulift') payDays = isAmbulift26Site ? effectivePr : (effectivePr + e.wo);
     else if(cfg.payDays === 'asft') payDays = isAsft26Site ? effectivePr : (effectivePr + e.wo);
+    else if(cfg.payDays === '17pbb') payDays = is17pbb26Site ? effectivePr : (effectivePr + e.wo);
+    else if(cfg.payDays === '60pbb') payDays = is60pbb26Site ? 26 : (effectivePr + e.wo);
     else payDays = effectivePr + e.wo;
 
     const basic = Math.round(basicTh/salCal*payDays);
@@ -1069,7 +1205,11 @@ function computeRegister(employees, cfg){
     const projAllow = Math.round(projAllowTh/salCal*payDays);
     const perfIncen = relieverIncentiveActual!==null ? Math.round(relieverIncentiveActual) : Math.round(perfIncenTh/salCal*payDays);
     // Ambulift always uses a fixed 26-day divisor for OT, regardless of each employee's own Sal Cal Days.
-    const otDivisor = (cfg.salCal === 'ambulift' || cfg.otDivisorFixed26) ? 26 : salCal;
+    // 60 PBB: Chennai uses its own Sal Cal Days for OT; every other location uses a fixed 26.
+    const is60pbbChennai = cfg.salCal === '60pbb' && String(e.location||'').trim().toLowerCase() === 'chennai';
+    const otDivisor = is60pbbChennai ? salCal
+      : (cfg.salCal === 'ambulift' || cfg.salCal === '17pbb' || cfg.salCal === '60pbb' || cfg.otDivisorFixed26) ? 26
+      : salCal;
     const otAmt = Math.round(teTh/otDivisor*e.ot);
     const te = basic+vda+hra+telephone+mgtAllow+projAllow+perfIncen+otAmt;
     const teWoOt = te-otAmt-perfIncen;
@@ -1097,7 +1237,9 @@ function computeRegister(employees, cfg){
     const isPtExemptLocation = PT_EXEMPT_LOCATIONS.includes(effectiveLocationForPt);
     // Calicut/Kerala PT depends on rolling 6-month cumulative data — not auto-calculable from
     // a single month's attendance. Use the manual override amount instead of the state's slab formula.
-    const isCalicutLocation = ['calicut','kozhikode'].includes(effectiveLocationForPt);
+    // Scoped only to projects that explicitly opt in (currently ASFT) — other Calicut-based projects
+    // (e.g. BHS Calicut, NEC EGATE) use the normal Kerala PT slab formula.
+    const isCalicutLocation = cfg.useCalicutManualPt && ['calicut','kozhikode'].includes(effectiveLocationForPt);
     // Punjab's annual-income threshold uses Total Earning(Th) — the stable base rate — not the
     // fluctuating actual monthly earning, so PT doesn't flip on/off due to a given month's OT/attendance.
     const ptAnnualBasis = (effectiveState === 'Punjab') ? teTh*12 : te*12;
@@ -1159,6 +1301,28 @@ function renderTable(rows){
 }
 
 /* ---------- Generate ---------- */
+/* ---------- Reset ---------- */
+function resetTool(){
+  workbookData = null;
+  lastRegister = [];
+  fileInput.value = '';
+  fileNameEl.style.display = 'none';
+  fileNameEl.textContent = '';
+  uploadStatus.className = 'status';
+  uploadStatus.style.display = 'none';
+  generateBtn.disabled = true;
+  const genStatus = document.getElementById('genStatus');
+  genStatus.className = 'status';
+  genStatus.style.display = 'none';
+  document.getElementById('tableHost').innerHTML = '<div class="empty-hint">Upload an attendance file and click Generate to see the register here.</div>';
+  document.getElementById('rowCountBadge').style.display = 'none';
+  document.getElementById('downloadRow').style.display = 'none';
+  document.getElementById('monthYear').value = '';
+  document.getElementById('calicutPtManual').value = '0';
+}
+document.getElementById('resetBtn').addEventListener('click', resetTool);
+document.getElementById('resetBtnTop').addEventListener('click', resetTool);
+
 document.getElementById('generateBtn').addEventListener('click', ()=>{
   const genStatus = document.getElementById('genStatus');
   genStatus.className='status'; genStatus.style.display='none';
@@ -1168,8 +1332,8 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
     if(!employees.length) throw new Error('No employee rows found.');
 
     const projectSel = document.getElementById('projectSelect').value;
-    const branchMap = {nagpur:'Nagpur',amritsar:'Amritsar',ahmedabad:'Ahmedabad',chennai:'Chennai',kolkata:'Kolkata',rajkot:'Rajkot',surat:'Surat',chandigarh:'Chandigarh',ambulift:'Ambulift',asft:'ASFT',custom:'Site'};
-    const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',rajkot:'BHS',surat:'BHS',chandigarh:'PBB',ambulift:'Ambulift',asft:'ASFT',custom:'—'};
+    const branchMap = {nagpur:'Nagpur',amritsar:'Amritsar',ahmedabad:'Ahmedabad',chennai:'Chennai',kolkata:'Kolkata',rajkot:'Rajkot',surat:'Surat',chandigarh:'Chandigarh',bhubaneshwar:'Bhubaneshwar',calicutbhs:'Calicut',raipur:'Raipur',varanasi:'Varanasi',vizag:'Vizag',necegate:'Calicut',pbb21:'21 PBB',ambulift:'Ambulift',asft:'ASFT',pbb17:'17 PBB',pbb60:'60 PBB',custom:'Site'};
+    const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',rajkot:'BHS',surat:'BHS',chandigarh:'PBB',bhubaneshwar:'BHS',calicutbhs:'BHS',raipur:'BHS',varanasi:'BHS',vizag:'BHS',necegate:'NEC',pbb21:'PBB',ambulift:'Ambulift',asft:'ASFT',pbb17:'PBB',pbb60:'PBB',custom:'—'};
 
     const cfg = {
       zone: PROJECT_PRESETS[projectSel].zone,
@@ -1178,8 +1342,10 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
       perEmployeeZone: !!PROJECT_PRESETS[projectSel].perEmployeeZone,
       attendantIsUnskilled: !!PROJECT_PRESETS[projectSel].attendantIsUnskilled,
       calicutPtManual: Number(document.getElementById('calicutPtManual').value) || 0,
+      useCalicutManualPt: !!PROJECT_PRESETS[projectSel].useCalicutManualPt,
       otDivisorFixed26: !!PROJECT_PRESETS[projectSel].otDivisorFixed26,
       pfActualThresholdFormula: !!PROJECT_PRESETS[projectSel].pfActualThresholdFormula,
+      defaultPerfIncen: PROJECT_PRESETS[projectSel].defaultPerfIncen || 0,
       salCal: document.getElementById('salCalMode').value,
       payDays: document.getElementById('payDaysMode').value,
       monthYear: document.getElementById('monthYear').value || '—',
@@ -1188,7 +1354,6 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
     };
 
     lastRegister = computeRegister(employees, cfg);
-    lastRegister.sort((a,b) => naturalCompare(a.code, b.code));
     renderTable(lastRegister);
     document.getElementById('rowCountBadge').style.display='inline-block';
     document.getElementById('rowCountBadge').textContent = lastRegister.length + ' employee(s) · sheet: ' + sheetName;
