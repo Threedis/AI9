@@ -401,6 +401,7 @@
             <option value="raipur">BHS Raipur</option>
             <option value="varanasi">BHS Varanasi</option>
             <option value="vizag">BHS Vizag</option>
+            <option value="jammu">BHS Jammu</option>
             <option value="necegate">NEC EGATE</option>
             <option value="pbb21">21 PBB (multi-location)</option>
             <option value="ambulift">Ambulift (multi-location)</option>
@@ -448,6 +449,26 @@
           <input type="number" id="calicutPtManual" value="0">
         </div>
       </div>
+
+      <div id="manualIncenSection" style="border-top:1px solid var(--line); margin:20px 0 16px; padding-top:18px; display:none;">
+        <h3 style="margin:0 0 12px;">Manual Performance Incentive</h3>
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); font-weight:600; margin-bottom:12px;">This session only — overrides any fixed incentive for that employee</div>
+        <div class="config-row">
+          <div class="field" style="flex:2;">
+            <label>Employee</label>
+            <select id="manualIncenEmployee"><option value="">Upload a file first</option></select>
+          </div>
+          <div class="field">
+            <label>PERF INCEN (₹)</label>
+            <input type="number" id="manualIncenAmount" value="0">
+          </div>
+          <div class="field" style="flex:0 0 auto; align-self:flex-end;">
+            <button class="btn btn-primary" id="manualIncenAddBtn" type="button" style="padding:9px 18px;">+ Add</button>
+          </div>
+        </div>
+        <div id="manualIncenList" style="margin-top:10px;"></div>
+      </div>
+
       <div class="btn-row">
         <button class="btn btn-primary" id="generateBtn" disabled>Generate Register</button>
         <button class="btn" id="resetBtnTop" style="background:#fff; border:1px solid var(--line); color:var(--ink);">↺ Reset</button>
@@ -606,7 +627,8 @@ const PT_SLABS = {
   'Uttar Pradesh': { note:'No Professional Tax levied in Uttar Pradesh', calc: ()=>0 },
   Rajasthan:   { note:'No Professional Tax levied in Rajasthan', calc: ()=>0 },
   Uttarakhand: { note:'No Professional Tax levied in Uttarakhand', calc: ()=>0 },
-  Odisha:      { note:'Apr-26 & May-26: old slab (₹125 for ₹13,334–25,000 gross). Jun-26 onwards: ₹0 per revised sheet, plus a one-time PT reimbursement of the Apr+May deductions.', calc: (te, annual, monthLabel) => {
+  Odisha:      { note:'No Professional Tax levied in Odisha (per revised PTax sheet)', calc: ()=>0 },
+  'Odisha-Jharsuguda': { note:'Jharsuguda only — Apr-26 & May-26: old slab (₹125 for ₹13,334–25,000 gross). Jun-26 onwards: ₹0, plus a one-time PT reimbursement of the Apr+May deductions.', calc: (te, annual, monthLabel) => {
     const mn = monthNumberFromLabel(monthLabel);
     const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
     const isApr26 = mn===4 && (yr==='26'||yr==='2026');
@@ -645,13 +667,40 @@ function monthNumberFromLabel(label){
   return idx===-1 ? null : idx+1;
 }
 
+/* Resolves an ADDITIONAL_ALLOWANCE_OVERRIDES field value that may be either a flat number
+   (always applies) or a function of the Month/Year label (for rates that change on a given
+   date, e.g. an HRA revision effective a specific month onward). */
+function resolveOverrideValue(val, monthLabel){
+  if(typeof val === 'function') return val(monthLabel) || 0;
+  return val || 0;
+}
+
+/* True if the given Month/Year label is May-2026 or any month after it. Used for
+   salary-revision effective dates. */
+function isMay26OrLater(monthLabel){
+  const mn = monthNumberFromLabel(monthLabel);
+  const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
+  if(mn===null || !yr) return false;
+  const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
+  return yrNum>2026 || (yrNum===2026 && mn>=5);
+}
+
 /* Fixed LOI-based fair-wage overrides — employees paid per their Letter of Intent, not MW/CLC/TN rates.
    Sal Cal Days = 26, Pay Days = PR Days only, per the agreed rule for these employees. */
 const FAIR_WAGE_OVERRIDES = {
   'PBBAD22': { name:'Bhaskar Vootla', basic:21200, vda:0, hra:10600, telephone:1000, mgtAllow:7200, salCal:26, payDaysMode:'pr_only' },
-  'BHS-S30': { name:'Nischal Shantilal Patel', basic:26000, vda:0, hra:11393, telephone:500, salCal:26, payDaysMode:'pr_only' },
+  'BHS-S30': { name:'Nischal Shantilal Patel', salCal:26, payDaysMode:'pr_only',
+    // Revised salary structure effective May-26 onward
+    basic: (monthLabel) => isMay26OrLater(monthLabel) ? 16562 : 26208,
+    vda: (monthLabel) => isMay26OrLater(monthLabel) ? 9646 : 0,
+    hra: (monthLabel) => isMay26OrLater(monthLabel) ? 10813 : 11185,
+    telephone: 500,
+    projAllow: (monthLabel) => isMay26OrLater(monthLabel) ? 5153 : 0
+  },
   // 60 PBB Srinagar — fair wage employee (Sal Cal/Pay Days follow the normal Srinagar site rule, not fixed)
-  'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra:4800, telephone:1000 }
+  'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra:4800, telephone:1000 },
+  // BHS ITC Vijayawada
+  'HO-0254': { name:'Neeraj Kumar', basic:20500, vda:0, hra:10250, telephone:500, projAllow:9790, perfIncen:7500 }
 };
 
 /* Fixed additional allowances (HRA/Telephone/Proj Allow etc.) stacked on top of the normal
@@ -740,14 +789,44 @@ const SKILL_DESIGNATION_OVERRIDE = {
 };
 
 const ADDITIONAL_ALLOWANCE_OVERRIDES = {
-  'BHS-HR08': { name:'Yadav Sanjaykumar', hra:7579, telephone:500, projAllow:6413 },
+  'BHS-HR08': { name:'Yadav Sanjaykumar', telephone:500,
+    // HRA: 7579 before May-26, 13104 from May-26 onward
+    hra: (monthLabel) => {
+      const mn = monthNumberFromLabel(monthLabel);
+      const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
+      if(mn!==null && yr){
+        const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
+        if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 13104;
+      }
+      return 7579;
+    },
+    // Proj Allow: 6413 before May-26, 5153 from May-26 onward
+    projAllow: (monthLabel) => {
+      const mn = monthNumberFromLabel(monthLabel);
+      const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
+      if(mn!==null && yr){
+        const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
+        if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 5153;
+      }
+      return 6413;
+    }
+  },
   'BHS-HR22': { name:'Chavda Kaushal Nileshbhai', perfIncen:2000 },
   // BHS Bhubaneshwar
   'BHS-B001': { name:'Debasis Rout', perfIncen:4000 },
   // BHS Calicut — Rijith gets 4000 (project rate) + 1000 (monthly approval, Kamran) instead of the ₹2000 default
   'BHS-CAL05': { name:'Rijith T', hra:298, perfIncen:5000 },
   // BHS Raipur
-  'BHS-R001':  { name:'Dharam Lal Sahu', hra:592 },
+  'BHS-R001':  { name:'Dharam Lal Sahu', hra: (monthLabel) => {
+    const mn = monthNumberFromLabel(monthLabel);
+    const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
+    // From May-26 onward: 2592. Before that: 592.
+    if(mn!==null && yr){
+      const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
+      if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 2592;
+    }
+    return 592;
+  } },
   'BHS-R005':  { name:'Lokesh Ojha', perfIncen:2000 },
   // BHS Varanasi
   'BHSVNS-0005': { name:'Dilip Kumar Gupta', perfIncen:2000 },
@@ -758,7 +837,6 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   'BHS-V005':  { name:'Chitturi Vijay Kumar', perfIncen:4000 },
   'BHS-V006':  { name:'Potnuru Dilip Kumar', perfIncen:2000 },
   // 21 PBB
-  'BHPL-001':  { name:'Manoj Deshmukh', perfIncen:1000 },
   'BHUB-001':  { name:'Amit Kumar Sahoo', perfIncen:2000 },
   // 60 PBB Kolkata — fair wage employees (HRA stacked on top of normal MW Basic/VDA)
   'PBBK601': { name:'Laxmidhar Nayak', hra:4556 },
@@ -767,8 +845,7 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   'BHSITC_V06': { name:'Krishna Kumar Gaur', hra:1292, telephone:500 },
   'BHSITC_V17': { name:'Gorrela Ashok', hra:3292, telephone:500 },
   'BHSITC_V18': { name:'Anil', hra:1632, telephone:500 },
-  'HO-0254':    { name:'Neeraj Kumar', hra:10273, telephone:500, projAllow:9790 }, // + Relocation Bonus (Approval Based) — not applied, needs case-by-case approval amount
-  'HO-0430':    { name:'Suneel Kumar', hra:10250, telephone:750, projAllow:6660 },  // + Performance Incentive (Approval Based) — not applied, needs case-by-case approval amount
+  'HO-0430':    { name:'Suneel Kumar', hra:10273, telephone:750, projAllow:6660, perfIncen:4000 },
   // 17 PBB Amritsar
   'AMRT-0036':  { name:'Sunil Kumar Prajapati', perfIncen:2000 }
 };
@@ -791,7 +868,7 @@ const STATE_FOR_LOCATION = {
   dehradun: 'Uttarakhand', darbanga: 'Bihar', darbhanga: 'Bihar',
   dhimapur: 'Nagaland', dimapur: 'Nagaland', gorakhpur: 'Uttar Pradesh',
   hubli: 'Karnataka', imphal: 'Manipur', jodhpur: 'Rajasthan',
-  jharsuguda: 'Odisha', jorahat: 'Assam', jorhat: 'Assam',
+  jharsuguda: 'Odisha-Jharsuguda', jorahat: 'Assam', jorhat: 'Assam',
   leh: 'Ladakh', patna: 'Bihar', 'port blair': 'Andaman & Nicobar',
   silchar: 'Assam', siliguri: 'West Bengal',
   // ASFT multi-location sites
@@ -814,12 +891,13 @@ const PROJECT_PRESETS = {
   surat:     { zone:'B', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_only', pfActualThresholdFormula:true },
   chandigarh:{ zone:'B', wageBasis:'CLC', state:'Punjab',      salCal:'month',  payDays:'pr_wo', otDivisorFixed26:true },
   bhubaneshwar:{ zone:'B', wageBasis:'CLC', state:'Odisha',    salCal:'fixed30',payDays:'pr_wo' },
-  calicutbhs:{ zone:'B', wageBasis:'CLC', state:'Kerala',      salCal:'fixed26',payDays:'pr_only', defaultPerfIncen:2000 },
+  calicutbhs:{ zone:'B', wageBasis:'CLC', state:'Kerala',      salCal:'fixed26',payDays:'pr_only', defaultPerfIncen:2000, pfCalicutFormula:true, useCalicutManualPt:true },
   raipur:    { zone:'B', wageBasis:'CLC', state:'Chhattisgarh',salCal:'month',  payDays:'pr_wo' },
   varanasi:  { zone:'B', wageBasis:'CLC', state:'Uttar Pradesh',salCal:'month', payDays:'pr_wo' },
   vizag:     { zone:'B', wageBasis:'CLC', state:'Andhra Pradesh',salCal:'month',payDays:'pr_wo' },
-  necegate:  { zone:'B', wageBasis:'CLC', state:'Kerala',       salCal:'month', payDays:'pr_wo' },
-  pbb21:     { zone:'A', wageBasis:'CLC', state:null,           salCal:'month', payDays:'pr_wo', perEmployeeZone:true },
+  jammu:     { zone:'B', wageBasis:'CLC', state:null,             salCal:'month',payDays:'pr_wo', showManualIncenSection:true },
+  necegate:  { zone:'B', wageBasis:'CLC', state:'Kerala',       salCal:'month', payDays:'pr_wo', useCalicutManualPt:true },
+  pbb21:     { zone:'A', wageBasis:'CLC', state:null,           salCal:'month', payDays:'pr_wo', perEmployeeZone:true, showManualIncenSection:true },
   ambulift:  { zone:'A', wageBasis:'CLC', state:null,          salCal:'ambulift',payDays:'ambulift', perEmployeeZone:true },
   asft:      { zone:'B', wageBasis:'CLC', state:null,          salCal:'asft',    payDays:'asft',    perEmployeeZone:true, attendantIsUnskilled:true, useCalicutManualPt:true },
   pbb17:     { zone:'A', wageBasis:'CLC', state:null,          salCal:'17pbb',   payDays:'17pbb',   perEmployeeZone:true },
@@ -827,11 +905,19 @@ const PROJECT_PRESETS = {
   custom:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'month',  payDays:'pr_wo' }
 };
 
+let uploadedEmployeesHaveCalicut = false;
+const CALICUT_ONLY_PROJECTS = ['calicutbhs','necegate'];
+function updateCalicutPtRowVisibility(projectKey){
+  const isCalicutOnlyProject = CALICUT_ONLY_PROJECTS.includes(projectKey);
+  document.getElementById('calicutPtRow').style.display = (isCalicutOnlyProject || uploadedEmployeesHaveCalicut) ? 'flex' : 'none';
+}
+
 document.getElementById('projectSelect').addEventListener('change', e=>{
   const p = PROJECT_PRESETS[e.target.value];
   document.getElementById('salCalMode').value = p.salCal;
   document.getElementById('payDaysMode').value = p.payDays;
-  document.getElementById('calicutPtRow').style.display = (e.target.value === 'asft') ? 'flex' : 'none';
+  document.getElementById('manualIncenSection').style.display = p.showManualIncenSection ? 'block' : 'none';
+  updateCalicutPtRowVisibility(e.target.value);
 });
 document.getElementById('projectSelect').dispatchEvent(new Event('change'));
 
@@ -879,6 +965,7 @@ function handleFile(file){
       uploadStatus.className='status ok';
       uploadStatus.textContent = 'File loaded. Choose a project and click Generate.';
       generateBtn.disabled = false;
+      populateManualIncenDropdown(wb);
     }catch(err){
       uploadStatus.className='status err';
       uploadStatus.textContent = 'Could not read file: ' + err.message;
@@ -887,6 +974,56 @@ function handleFile(file){
   };
   reader.readAsArrayBuffer(file);
 }
+
+/* ---------- Manual PERF INCEN (session-only) ---------- */
+let manualPerfIncenList = [];
+
+function populateManualIncenDropdown(wb){
+  const sel = document.getElementById('manualIncenEmployee');
+  try{
+    const {employees} = parseAttendance(wb);
+    sel.innerHTML = '<option value="">Select employee…</option>' +
+      employees.map(e => `<option value="${e.code}" data-name="${(e.name||'').replace(/"/g,'&quot;')}">${e.code} — ${e.name}</option>`).join('');
+    uploadedEmployeesHaveCalicut = employees.some(e => ['calicut','kozhikode'].includes(String(e.location||'').trim().toLowerCase()));
+    updateCalicutPtRowVisibility(document.getElementById('projectSelect').value);
+  }catch(err){
+    sel.innerHTML = '<option value="">Could not read employee list</option>';
+    uploadedEmployeesHaveCalicut = false;
+  }
+}
+
+function renderManualIncenList(){
+  const host = document.getElementById('manualIncenList');
+  if(!manualPerfIncenList.length){ host.innerHTML = ''; return; }
+  host.innerHTML = '<div style="display:flex; flex-direction:column; gap:6px;">' +
+    manualPerfIncenList.map((item,i) =>
+      `<div style="display:flex; align-items:center; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:13px;">
+        <span style="font-family:var(--mono); font-weight:600;">${item.code}</span>
+        <span style="flex:1; color:var(--sub);">${item.name}</span>
+        <span style="font-family:var(--mono); font-weight:600; color:var(--ok);">₹${item.amount}</span>
+        <button type="button" data-remove-idx="${i}" style="background:none; border:none; color:var(--warn); cursor:pointer; font-size:16px; line-height:1; padding:0 4px;">×</button>
+      </div>`
+    ).join('') + '</div>';
+  host.querySelectorAll('[data-remove-idx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      manualPerfIncenList.splice(Number(btn.dataset.removeIdx), 1);
+      renderManualIncenList();
+    });
+  });
+}
+
+document.getElementById('manualIncenAddBtn').addEventListener('click', ()=>{
+  const sel = document.getElementById('manualIncenEmployee');
+  const amountInput = document.getElementById('manualIncenAmount');
+  const code = sel.value;
+  if(!code) return;
+  const name = sel.options[sel.selectedIndex].dataset.name || '';
+  const amount = Number(amountInput.value) || 0;
+  const existingIdx = manualPerfIncenList.findIndex(item => item.code === code);
+  if(existingIdx !== -1) manualPerfIncenList[existingIdx] = {code, name, amount};
+  else manualPerfIncenList.push({code, name, amount});
+  renderManualIncenList();
+});
 
 /* ---------- Sheet selection: prefer Modify/Final ---------- */
 function pickSheet(wb){
@@ -1145,9 +1282,15 @@ function computeRegister(employees, cfg){
     if(relieverRule){
       payDaysOverride = relieverPayDays;
     }
+    let perfIncenFixed = 0;
     if(fairWage){
-      basicTh = fairWage.basic; vdaTh = fairWage.vda;
-      hraTh = fairWage.hra||0; telephoneTh = fairWage.telephone||0; mgtAllowTh = fairWage.mgtAllow||0;
+      basicTh = resolveOverrideValue(fairWage.basic, cfg.monthYear);
+      vdaTh = resolveOverrideValue(fairWage.vda, cfg.monthYear);
+      hraTh = resolveOverrideValue(fairWage.hra, cfg.monthYear);
+      telephoneTh = resolveOverrideValue(fairWage.telephone, cfg.monthYear);
+      mgtAllowTh = resolveOverrideValue(fairWage.mgtAllow, cfg.monthYear);
+      projAllowTh = resolveOverrideValue(fairWage.projAllow, cfg.monthYear);
+      perfIncenFixed = resolveOverrideValue(fairWage.perfIncen, cfg.monthYear);
       if(fairWage.salCal!==undefined) salCalOverride = fairWage.salCal;
       if(fairWage.payDaysMode==='pr_only') payDaysOverride = e.pr;
     }
@@ -1156,13 +1299,22 @@ function computeRegister(employees, cfg){
     // (unlike FAIR_WAGE_OVERRIDES, which replaces Basic/VDA entirely).
     const extraAllow = ADDITIONAL_ALLOWANCE_OVERRIDES[e.code];
     if(extraAllow){
-      hraTh += extraAllow.hra||0; telephoneTh += extraAllow.telephone||0; projAllowTh += extraAllow.projAllow||0;
-      perfIncenTh += extraAllow.perfIncen||0;
+      hraTh += resolveOverrideValue(extraAllow.hra, cfg.monthYear);
+      telephoneTh += resolveOverrideValue(extraAllow.telephone, cfg.monthYear);
+      projAllowTh += resolveOverrideValue(extraAllow.projAllow, cfg.monthYear);
+      perfIncenFixed = resolveOverrideValue(extraAllow.perfIncen, cfg.monthYear);
     } else if(cfg.defaultPerfIncen){
       // Project-wide default incentive applied to every employee, unless they have their own
       // specific override above (which takes precedence and replaces this default entirely).
-      perfIncenTh += cfg.defaultPerfIncen;
+      perfIncenFixed = cfg.defaultPerfIncen;
     }
+    // Manual, session-only PERF INCEN entered in the UI takes absolute highest precedence,
+    // overriding any fixed code-level override or project default for that employee.
+    if(cfg.manualPerfIncenMap && cfg.manualPerfIncenMap[e.code] !== undefined){
+      perfIncenFixed = cfg.manualPerfIncenMap[e.code];
+    }
+    // PERF INCEN is a flat monthly amount, not part of the theoretical base wage — it must NOT
+    // flow into PERF INCEN (Th) or Total Earning(Th); it only appears in the actual PERF INCEN earning.
 
     // Total Earning(Th) is the base wage figure only — HRA/Telephone/Mgt Allow/Proj Allow are part of the
     // standard structured salary, but PERF INCEN is a variable incentive and must NOT be counted here
@@ -1203,7 +1355,7 @@ function computeRegister(employees, cfg){
     const telephone = Math.round(telephoneTh/salCal*payDays);
     const mgtAllow = Math.round(mgtAllowTh/salCal*payDays);
     const projAllow = Math.round(projAllowTh/salCal*payDays);
-    const perfIncen = relieverIncentiveActual!==null ? Math.round(relieverIncentiveActual) : Math.round(perfIncenTh/salCal*payDays);
+    const perfIncen = relieverIncentiveActual!==null ? Math.round(relieverIncentiveActual) : perfIncenFixed;
     // Ambulift always uses a fixed 26-day divisor for OT, regardless of each employee's own Sal Cal Days.
     // 60 PBB: Chennai uses its own Sal Cal Days for OT; every other location uses a fixed 26.
     const is60pbbChennai = cfg.salCal === '60pbb' && String(e.location||'').trim().toLowerCase() === 'chennai';
@@ -1223,6 +1375,8 @@ function computeRegister(employees, cfg){
       ? Math.round(teWoOt*0.12)
       : cfg.pfActualThresholdFormula
       ? Math.round(te>=15000 ? 1800 : te*0.12)
+      : cfg.pfCalicutFormula
+      ? (teWoOt<15000 ? Math.round((15000*0.12)/salCal*pfPayDays) : 1800)
       : Math.round((15000*0.12)/salCal*pfPayDays);
     const pfEarn = cfg.pfActualThresholdFormula
       ? Math.round(te>=15000 ? 15000 : te)
@@ -1239,7 +1393,7 @@ function computeRegister(employees, cfg){
     // a single month's attendance. Use the manual override amount instead of the state's slab formula.
     // Scoped only to projects that explicitly opt in (currently ASFT) — other Calicut-based projects
     // (e.g. BHS Calicut, NEC EGATE) use the normal Kerala PT slab formula.
-    const isCalicutLocation = cfg.useCalicutManualPt && ['calicut','kozhikode'].includes(effectiveLocationForPt);
+    const isCalicutLocation = ['calicut','kozhikode'].includes(effectiveLocationForPt);
     // Punjab's annual-income threshold uses Total Earning(Th) — the stable base rate — not the
     // fluctuating actual monthly earning, so PT doesn't flip on/off due to a given month's OT/attendance.
     const ptAnnualBasis = (effectiveState === 'Punjab') ? teTh*12 : te*12;
@@ -1251,15 +1405,15 @@ function computeRegister(employees, cfg){
     const lwfMonthApplies = lwfRule && (lwfRule.months === 'all' || (currentMonth!==null && lwfRule.months.includes(currentMonth)));
     const lwf = lwfMonthApplies ? lwfRule.calc(te) : 0;
 
-    // Odisha (Jharsuguda): one-time reimbursement in June-26 of the Apr-26 + May-26 PT
-    // deducted under the old slab, since the revised sheet sets Odisha PT to 0 from Jun-26.
+    // Jharsuguda only: one-time reimbursement in June-26 of the Apr-26 + May-26 PT
+    // deducted under the old slab, since the revised sheet sets PT to 0 from Jun-26.
     let arrear = 0;
-    if(effectiveState === 'Odisha'){
+    if(effectiveState === 'Odisha-Jharsuguda'){
       const yr = (String(cfg.monthYear||'').match(/(\d{2,4})$/)||[])[1];
       const isJun26 = currentMonth===6 && (yr==='26'||yr==='2026');
       if(isJun26){
-        const aprPt = PT_SLABS.Odisha.calc(te, te*12, 'Apr-26');
-        const mayPt = PT_SLABS.Odisha.calc(te, te*12, 'May-26');
+        const aprPt = PT_SLABS['Odisha-Jharsuguda'].calc(te, te*12, 'Apr-26');
+        const mayPt = PT_SLABS['Odisha-Jharsuguda'].calc(te, te*12, 'May-26');
         arrear = aprPt + mayPt;
       }
     }
@@ -1319,6 +1473,11 @@ function resetTool(){
   document.getElementById('downloadRow').style.display = 'none';
   document.getElementById('monthYear').value = '';
   document.getElementById('calicutPtManual').value = '0';
+  manualPerfIncenList = [];
+  renderManualIncenList();
+  document.getElementById('manualIncenEmployee').innerHTML = '<option value="">Upload a file first</option>';
+  uploadedEmployeesHaveCalicut = false;
+  updateCalicutPtRowVisibility(document.getElementById('projectSelect').value);
 }
 document.getElementById('resetBtn').addEventListener('click', resetTool);
 document.getElementById('resetBtnTop').addEventListener('click', resetTool);
@@ -1332,8 +1491,8 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
     if(!employees.length) throw new Error('No employee rows found.');
 
     const projectSel = document.getElementById('projectSelect').value;
-    const branchMap = {nagpur:'Nagpur',amritsar:'Amritsar',ahmedabad:'Ahmedabad',chennai:'Chennai',kolkata:'Kolkata',rajkot:'Rajkot',surat:'Surat',chandigarh:'Chandigarh',bhubaneshwar:'Bhubaneshwar',calicutbhs:'Calicut',raipur:'Raipur',varanasi:'Varanasi',vizag:'Vizag',necegate:'Calicut',pbb21:'21 PBB',ambulift:'Ambulift',asft:'ASFT',pbb17:'17 PBB',pbb60:'60 PBB',custom:'Site'};
-    const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',rajkot:'BHS',surat:'BHS',chandigarh:'PBB',bhubaneshwar:'BHS',calicutbhs:'BHS',raipur:'BHS',varanasi:'BHS',vizag:'BHS',necegate:'NEC',pbb21:'PBB',ambulift:'Ambulift',asft:'ASFT',pbb17:'PBB',pbb60:'PBB',custom:'—'};
+    const branchMap = {nagpur:'Nagpur',amritsar:'Amritsar',ahmedabad:'Ahmedabad',chennai:'Chennai',kolkata:'Kolkata',rajkot:'Rajkot',surat:'Surat',chandigarh:'Chandigarh',bhubaneshwar:'Bhubaneshwar',calicutbhs:'Calicut',raipur:'Raipur',varanasi:'Varanasi',vizag:'Vizag',necegate:'Calicut',pbb21:'21 PBB',jammu:'Jammu',ambulift:'Ambulift',asft:'ASFT',pbb17:'17 PBB',pbb60:'60 PBB',custom:'Site'};
+    const divMap = {nagpur:'PBB',amritsar:'BHS',ahmedabad:'PBB',chennai:'PBB',kolkata:'NEC',rajkot:'BHS',surat:'BHS',chandigarh:'PBB',bhubaneshwar:'BHS',calicutbhs:'BHS',raipur:'BHS',varanasi:'BHS',vizag:'BHS',necegate:'NEC',pbb21:'PBB',jammu:'BHS',ambulift:'Ambulift',asft:'ASFT',pbb17:'PBB',pbb60:'PBB',custom:'—'};
 
     const cfg = {
       zone: PROJECT_PRESETS[projectSel].zone,
@@ -1342,9 +1501,11 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
       perEmployeeZone: !!PROJECT_PRESETS[projectSel].perEmployeeZone,
       attendantIsUnskilled: !!PROJECT_PRESETS[projectSel].attendantIsUnskilled,
       calicutPtManual: Number(document.getElementById('calicutPtManual').value) || 0,
+      manualPerfIncenMap: Object.fromEntries(manualPerfIncenList.map(item => [item.code, item.amount])),
       useCalicutManualPt: !!PROJECT_PRESETS[projectSel].useCalicutManualPt,
       otDivisorFixed26: !!PROJECT_PRESETS[projectSel].otDivisorFixed26,
       pfActualThresholdFormula: !!PROJECT_PRESETS[projectSel].pfActualThresholdFormula,
+      pfCalicutFormula: !!PROJECT_PRESETS[projectSel].pfCalicutFormula,
       defaultPerfIncen: PROJECT_PRESETS[projectSel].defaultPerfIncen || 0,
       salCal: document.getElementById('salCalMode').value,
       payDays: document.getElementById('payDaysMode').value,
