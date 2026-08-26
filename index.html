@@ -1235,7 +1235,7 @@ function buildFullRecord(r){
   rec["Emp ID"]=r.code; rec["Employee Name"]=r.name; rec["Month/ Year"]=r.monthYear;
   rec["Designation"]=r.desig; rec["Date of Joining"]=r.doj;
   rec["BASIC (Th)"]=r.basicTh; rec["VDA (Th)"]=r.vdaTh;
-  rec["HRA (Th)"]=r.hraTh||0; rec["TELEPHONE (Th)"]=r.telephoneTh||0; rec["MGT ALLOW (Th)"]=r.mgtAllowTh||0; rec["PROJ ALLOW (Th)"]=r.projAllowTh||0; rec["Retention (Th)"]=r.retentionTh||0; rec["PERF INCEN (Th)"]=r.perfIncenTh||0;
+  rec["HRA (Th)"]=r.hraTh||0; rec["TELEPHONE (Th)"]=r.telephoneTh||0; rec["MGT ALLOW (Th)"]=r.mgtAllowTh||0; rec["PROJ ALLOW (Th)"]=r.projAllowTh||0; rec["Retention (Th)"]=0; rec["PERF INCEN (Th)"]=r.perfIncenTh||0;
   rec["Total Earning(Th)"]=r.teTh;
   rec["Sal Cal Days"]=r.salCal; rec["LOP AVAILED"]=r.lop; rec["Pay Days"]=r.payDays;
   rec["BASIC"]=r.basic; rec["VDA"]=r.vda;
@@ -1326,7 +1326,7 @@ function computeRegister(employees, cfg){
 
     // Fixed LOI-based fair-wage override (e.g. Bhaskar Vootla, PBBAD22 — not on MW/CLC/TN rates)
     const fairWage = FAIR_WAGE_OVERRIDES[e.code];
-    let hraTh = 0, telephoneTh = 0, mgtAllowTh = 0, projAllowTh = 0, perfIncenTh = 0, retentionTh = 0;
+    let hraTh = 0, telephoneTh = 0, mgtAllowTh = 0, projAllowTh = 0, perfIncenTh = 0, retentionFixed = 0;
     let salCalOverride = null, payDaysOverride = null;
     if(relieverRule){
       payDaysOverride = relieverPayDays;
@@ -1355,7 +1355,7 @@ function computeRegister(employees, cfg){
       hraTh += resolveOverrideValue(extraAllow.hra, cfg.monthYear);
       telephoneTh += resolveOverrideValue(extraAllow.telephone, cfg.monthYear);
       projAllowTh += resolveOverrideValue(extraAllow.projAllow, cfg.monthYear);
-      retentionTh += resolveOverrideValue(extraAllow.retention, cfg.monthYear);
+      retentionFixed = resolveOverrideValue(extraAllow.retention, cfg.monthYear);
       perfIncenFixed = resolveOverrideValue(extraAllow.perfIncen, cfg.monthYear);
     } else if(cfg.defaultPerfIncen){
       // Project-wide default incentive applied to every employee, unless they have their own
@@ -1373,7 +1373,7 @@ function computeRegister(employees, cfg){
     // Total Earning(Th) is the base wage figure only — HRA/Telephone/Mgt Allow/Proj Allow are part of the
     // standard structured salary, but PERF INCEN is a variable incentive and must NOT be counted here
     // (it would otherwise inflate the OT day-rate and ESI/PF threshold checks).
-    const teTh = basicTh+vdaTh+hraTh+telephoneTh+mgtAllowTh+projAllowTh+retentionTh;
+    const teTh = basicTh+vdaTh+hraTh+telephoneTh+mgtAllowTh+projAllowTh;
 
     let salCal;
     if(salCalOverride!==null) salCal = salCalOverride;
@@ -1409,7 +1409,7 @@ function computeRegister(employees, cfg){
     const telephone = Math.round(telephoneTh/salCal*payDays);
     const mgtAllow = Math.round(mgtAllowTh/salCal*payDays);
     const projAllow = Math.round(projAllowTh/salCal*payDays);
-    const retention = Math.round(retentionTh/salCal*payDays);
+    const retention = retentionFixed;
     const perfIncen = relieverIncentiveActual!==null ? Math.round(relieverIncentiveActual) : perfIncenFixed;
     // Ambulift always uses a fixed 26-day divisor for OT, regardless of each employee's own Sal Cal Days.
     // 60 PBB: Chennai uses its own Sal Cal Days for OT; every other location uses a fixed 26.
@@ -1491,7 +1491,7 @@ function computeRegister(employees, cfg){
 
     rows.push({
       code:e.code, name:e.name, monthYear:cfg.monthYear, desig:e.desig, doj:e.doj,
-      basicTh, vdaTh, hraTh, telephoneTh, mgtAllowTh, projAllowTh, retentionTh, perfIncenTh, teTh, salCal, lop:e.ab, payDays,
+      basicTh, vdaTh, hraTh, telephoneTh, mgtAllowTh, projAllowTh, perfIncenTh, teTh, salCal, lop:e.ab, payDays,
       basic, vda, hra, telephone, mgtAllow, projAllow, retention, perfIncen, otDays:e.ot, otAmt, te, teWoOt,
       pf, esi, pt, lwf, arrear, totDed, net, pfEarn,
       branch: (cfg.perEmployeeZone && e.location) ? e.location : cfg.branchName, division:cfg.divisionName
