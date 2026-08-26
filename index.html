@@ -944,7 +944,7 @@ const PROJECT_PRESETS = {
   vizag:     { zone:'B', wageBasis:'CLC', state:'Andhra Pradesh',salCal:'month',payDays:'pr_wo' },
   jammu:     { zone:'B', wageBasis:'CLC', state:null,             salCal:'month',payDays:'pr_wo', showManualIncenSection:true },
   bhsitcvjwd:{ zone:'B', wageBasis:'CLC', state:'Andhra Pradesh',  salCal:'month',payDays:'pr_wo' },
-  bhspune:   { zone:'A', wageBasis:'CLC', state:'Maharashtra',    salCal:'fixed26',payDays:'pr_wo' },
+  bhspune:   { zone:'A', wageBasis:'CLC', state:'Maharashtra',    salCal:'fixed26',payDays:'pr_wo', pfPuneFormula:true },
   necegate:  { zone:'B', wageBasis:'CLC', state:'Kerala',       salCal:'month', payDays:'pr_wo', useCalicutManualPt:true },
   pbb21:     { zone:'A', wageBasis:'CLC', state:null,           salCal:'month', payDays:'pr_wo', perEmployeeZone:true, showManualIncenSection:true },
   ambulift:  { zone:'A', wageBasis:'CLC', state:null,          salCal:'ambulift',payDays:'ambulift', perEmployeeZone:true },
@@ -1221,7 +1221,7 @@ const FULL_HEADERS_ZERO = new Set(["CONVEYANCE (Th)","SPL. ALLOW (Th)",
   "Perf. Ince (Th)","RET. BONUS (Th)",
   "CONVEYANCE","SPL. ALLOW","MEDICAL AL",
   "STATUTORY","GRATUITY","BOOK ALLOW","HELPER ALL","PETROL RE","NO OF NH","LOY BONUS","ATTEND INC",
-  "PER BONUS","RET. BONUS","LTA REIM","REL BONUS","Hardship A","Perf. Ince",
+  "PER BONUS","RET. BONUS","LTA REIM","Hardship A","Perf. Ince",
   "TDS","PF.","MOBILE DED","SALARY ADV","OTHER DED","ot hr che","OT Amount.",
   "Bank Name","Bank A/c No","Bank IFSC","Date of Leaving"]);
 
@@ -1239,7 +1239,7 @@ function buildFullRecord(r){
   rec["Total Earning(Th)"]=r.teTh;
   rec["Sal Cal Days"]=r.salCal; rec["LOP AVAILED"]=r.lop; rec["Pay Days"]=r.payDays;
   rec["BASIC"]=r.basic; rec["VDA"]=r.vda;
-  rec["HRA"]=r.hra||0; rec["TELEPHONE"]=r.telephone||0; rec["MGT ALLOW"]=r.mgtAllow||0; rec["PROJ ALLOW"]=r.projAllow||0; rec["Retention"]=r.retention||0; rec["PERF INCEN"]=r.perfIncen||0;
+  rec["HRA"]=r.hra||0; rec["TELEPHONE"]=r.telephone||0; rec["MGT ALLOW"]=r.mgtAllow||0; rec["PROJ ALLOW"]=r.projAllow||0; rec["Retention"]=r.retention||0; rec["REL BONUS"]=r.relocation||0; rec["PERF INCEN"]=r.perfIncen||0;
   rec["NO OF H/D"]=r.otDays; rec["OT AMT"]=r.otAmt;
   rec["Total Earning"]=r.te; rec["Total Earning Without OT"]=r.teWoOt;
   rec["PF"]=r.pf; rec["ESI"]=r.esi; rec["PT"]=r.pt; rec["LWF"]=r.lwf||0;
@@ -1326,7 +1326,7 @@ function computeRegister(employees, cfg){
 
     // Fixed LOI-based fair-wage override (e.g. Bhaskar Vootla, PBBAD22 — not on MW/CLC/TN rates)
     const fairWage = FAIR_WAGE_OVERRIDES[e.code];
-    let hraTh = 0, telephoneTh = 0, mgtAllowTh = 0, projAllowTh = 0, perfIncenTh = 0, retentionFixed = 0;
+    let hraTh = 0, telephoneTh = 0, mgtAllowTh = 0, projAllowTh = 0, perfIncenTh = 0, retentionFixed = 0, relocationFixed = 0;
     let salCalOverride = null, payDaysOverride = null;
     if(relieverRule){
       payDaysOverride = relieverPayDays;
@@ -1356,6 +1356,7 @@ function computeRegister(employees, cfg){
       telephoneTh += resolveOverrideValue(extraAllow.telephone, cfg.monthYear);
       projAllowTh += resolveOverrideValue(extraAllow.projAllow, cfg.monthYear);
       retentionFixed = resolveOverrideValue(extraAllow.retention, cfg.monthYear);
+      relocationFixed = resolveOverrideValue(extraAllow.relocation, cfg.monthYear);
       perfIncenFixed = resolveOverrideValue(extraAllow.perfIncen, cfg.monthYear);
     } else if(cfg.defaultPerfIncen){
       // Project-wide default incentive applied to every employee, unless they have their own
@@ -1410,6 +1411,7 @@ function computeRegister(employees, cfg){
     const mgtAllow = Math.round(mgtAllowTh/salCal*payDays);
     const projAllow = Math.round(projAllowTh/salCal*payDays);
     const retention = retentionFixed;
+    const relocation = relocationFixed;
     const perfIncen = relieverIncentiveActual!==null ? Math.round(relieverIncentiveActual) : perfIncenFixed;
     // Ambulift always uses a fixed 26-day divisor for OT, regardless of each employee's own Sal Cal Days.
     // 60 PBB: Chennai uses its own Sal Cal Days for OT; every other location uses a fixed 26.
@@ -1419,8 +1421,8 @@ function computeRegister(employees, cfg){
       : (cfg.salCal === 'ambulift' || cfg.salCal === '17pbb' || cfg.salCal === '60pbb' || cfg.otDivisorFixed26 || isNagpurSiteIncharge) ? 26
       : salCal;
     const otAmt = Math.round(teTh/otDivisor*e.ot);
-    const te = basic+vda+hra+telephone+mgtAllow+projAllow+retention+perfIncen+otAmt;
-    const teWoOt = te-otAmt-perfIncen;
+    const te = basic+vda+hra+telephone+mgtAllow+projAllow+retention+relocation+perfIncen+otAmt;
+    const teWoOt = te-otAmt-perfIncen-retention-relocation;
     // On fixed-26 Sal Cal Days sites, Pay Days used for PF/PF Earning is capped at 26 —
     // so PF never exceeds the statutory ceiling even if Pay Days (e.g. PR+WO) totals more than 26.
     // Pay Days used for PF/PF Earning is capped at Sal Cal Days — so PF never exceeds the
@@ -1437,6 +1439,8 @@ function computeRegister(employees, cfg){
       ? Math.round(te>=15000 ? 1800 : te*0.12)
       : (cfg.pfCalicutFormula || isNagpurSiteIncharge)
       ? (teWoOt<15000 ? Math.round((15000*0.12)/salCal*pfPayDays) : 1800)
+      : cfg.pfPuneFormula
+      ? (te>15000 ? 1800 : Math.min(Math.round((15000*0.12)/salCal*payDays), 1800))
       : cfg.pfUncappedPayDays
       ? Math.min(Math.round((15000*0.12)/salCal*pfPayDays), 1800)
       : Math.round((15000*0.12)/salCal*pfPayDays);
@@ -1492,7 +1496,7 @@ function computeRegister(employees, cfg){
     rows.push({
       code:e.code, name:e.name, monthYear:cfg.monthYear, desig:e.desig, doj:e.doj,
       basicTh, vdaTh, hraTh, telephoneTh, mgtAllowTh, projAllowTh, perfIncenTh, teTh, salCal, lop:e.ab, payDays,
-      basic, vda, hra, telephone, mgtAllow, projAllow, retention, perfIncen, otDays:e.ot, otAmt, te, teWoOt,
+      basic, vda, hra, telephone, mgtAllow, projAllow, retention, relocation, perfIncen, otDays:e.ot, otAmt, te, teWoOt,
       pf, esi, pt, lwf, arrear, totDed, net, pfEarn,
       branch: (cfg.perEmployeeZone && e.location) ? e.location : cfg.branchName, division:cfg.divisionName
     });
@@ -1573,6 +1577,7 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
       useCalicutManualPt: !!PROJECT_PRESETS[projectSel].useCalicutManualPt,
       otDivisorFixed26: !!PROJECT_PRESETS[projectSel].otDivisorFixed26,
       pfUncappedPayDays: !!PROJECT_PRESETS[projectSel].pfUncappedPayDays,
+      pfPuneFormula: !!PROJECT_PRESETS[projectSel].pfPuneFormula,
       pfActualThresholdFormula: !!PROJECT_PRESETS[projectSel].pfActualThresholdFormula,
       pfCalicutFormula: !!PROJECT_PRESETS[projectSel].pfCalicutFormula,
       defaultPerfIncen: PROJECT_PRESETS[projectSel].defaultPerfIncen || 0,
