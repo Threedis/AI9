@@ -33,9 +33,72 @@
 
   .app{
     display:grid;
-    grid-template-columns: 254px 1fr;
+    grid-template-columns: 254px 1fr 300px;
     min-height:100vh;
   }
+
+  /* RIGHT STICKY NOTES */
+  .notes-rail{
+    padding:28px 24px;
+    border-left:1px solid var(--line);
+    background:#eef0ec;
+  }
+  .notes-sticky{ position:sticky; top:28px; }
+  .note-card{ transition:transform .15s; }
+  .note-card:hover{ transform:rotate(0deg) scale(1.02); }
+  .notes-sticky h2{
+    font-family:var(--sans);
+    font-size:11.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--sub);
+    font-weight:700;
+    margin:0 0 14px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .note-card{
+    position:relative;
+    background:linear-gradient(135deg, #fff6a8 0%, #ffe985 100%);
+    border:none;
+    border-radius:2px 2px 2px 18px/2px 2px 2px 24px;
+    padding:16px 18px 20px;
+    margin:0 4px 22px 4px;
+    box-shadow:2px 4px 10px rgba(120,100,20,.22), 0 1px 0 rgba(255,255,255,.6) inset;
+    transform:rotate(-1deg);
+  }
+  .note-card:nth-child(even){ transform:rotate(1deg); }
+  .note-card::after{
+    content:"";
+    position:absolute; right:0; bottom:0;
+    width:0; height:0;
+    border-style:solid;
+    border-width:0 0 18px 18px;
+    border-color:transparent transparent rgba(0,0,0,.13) transparent;
+    border-bottom-right-radius:2px;
+  }
+  .note-card::before{
+    content:"";
+    position:absolute; right:0; bottom:0;
+    width:0; height:0;
+    border-style:solid;
+    border-width:0 0 18px 18px;
+    border-color:transparent transparent #fff3a0 transparent;
+    filter:brightness(1.05);
+  }
+  .note-card .note-label{
+    font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+    color:#8a6d00; margin-bottom:6px;
+  }
+  .note-card .note-body{
+    font-size:12.5px; line-height:1.55; color:#4a3f00;
+  }
+  .note-card.warn{ background:linear-gradient(135deg, #ffe0b0 0%, #ffc978 100%); }
+  .note-card.warn .note-label{ color:#8a4600; }
+  .note-card.warn .note-body{ color:#5c3600; }
+  .note-card.warn::before{ border-color:transparent transparent #ffdca0 transparent; }
+  .note-card ul{ margin:4px 0 0; padding-left:16px; }
+  .note-card li{ margin-bottom:3px; }
 
   /* LEFT RAIL */
   .rail{
@@ -43,6 +106,42 @@
     color:#c7cae0;
     padding:26px 20px 30px;
     position:relative;
+  }
+  .brand-block{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(216,173,100,.35);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:26px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .brand-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-logo{
+    width:34px; height:34px;
+    flex:0 0 auto;
+    border-radius:6px;
+    object-fit:cover;
+    background:#fff;
+  }
+  .brand-hero{
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:12.5px;
+    line-height:1.3;
+    color:#fff;
+  }
+  .brand-sub{
+    font-family:var(--sans);
+    font-size:11px;
+    color:var(--brass-2);
+    letter-spacing:.01em;
+    padding-left:44px;
   }
   .rail h2{
     font-family:var(--sans);
@@ -310,6 +409,13 @@
 
   <!-- LEFT RAIL -->
   <aside class="rail">
+    <div class="brand-block">
+      <div class="brand-row">
+        <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QB0RXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACWAAAAAQAAAJYAAAABAAKgAgAEAAAAAQAAAKigAwAEAAAAAQAAAJEAAAAA/+0AOFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAAOEJJTQQlAAAAAAAQ1B2M2Y8AsgTpgAmY7PhCfv/iAkBJQ0NfUFJPRklMRQABAQAAAjBBREJFAhAAAG1udHJSR0IgWFlaIAfQAAgACwATADMAO2Fjc3BBUFBMAAAAAG5vbmUAAAAAAAAAAAAAAAAAAAAAAAD21gABAAAAANMtQURCRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACmNwcnQAAAD8AAAAMmRlc2MAAAEwAAAAa3d0cHQAAAGcAAAAFGJrcHQAAAGwAAAAFHJUUkMAAAHEAAAADmdUUkMAAAHUAAAADmJUUkMAAAHkAAAADnJYWVoAAAH0AAAAFGdYWVoAAAIIAAAAFGJYWVoAAAIcAAAAFHRleHQAAAAAQ29weXJpZ2h0IDIwMDAgQWRvYmUgU3lzdGVtcyBJbmNvcnBvcmF0ZWQAAABkZXNjAAAAAAAAABFBZG9iZSBSR0IgKDE5OTgpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABYWVogAAAAAAAA81EAAQAAAAEWzFhZWiAAAAAAAAAAAAAAAAAAAAAAY3VydgAAAAAAAAABAjMAAGN1cnYAAAAAAAAAAQIzAABjdXJ2AAAAAAAAAAECMwAAWFlaIAAAAAAAAJwYAABPpQAABPxYWVogAAAAAAAANI0AAKAsAAAPlVhZWiAAAAAAAAAmMQAAEC8AAL6c/8AAEQgAkQCoAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAgICAgICAwICAwQDAwMEBQQEBAQFBwUFBQUFBwgHBwcHBwcICAgICAgICAoKCgoKCgsLCwsLDQ0NDQ0NDQ0NDf/bAEMBAgICAwMDBgMDBg0JBwkNDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDf/dAAQAC//aAAwDAQACEQMRAD8A/fyiiigAooooARvunAzx0rz/AMXeOfDvgmyhuvEV5/Z0bsQSEeTGBn+BT2r0BhlSPavGvib8KvC/xX0Gbw34gE5XY4V4ZWiAMi4+8vNAGLF+0f8ACCR4ooddWZnz8xgmU8fVKnH7Q3wlWT7PNrq7m5A8mU4H4JX4YftrfsVah8GdKm8aeC76c2qB5cNczzFRvjQZyMfxGvzDtLjUoZVma9uJJxw4WZz8x68Zp2KSP7EF/aF+EM58pNeVmHOPImHT/gFEfx9+GM7sp1VGSP5i3ly8D6bK/la8Hfs4fGb4kTf2hoFnqjw/6vcEuWXIwTygI/iFe0wf8E+f2ip1Oo2808LoN22X7Xn5fbZQFj+mnSfib4O15QdIvknjOOcMnB6cMo9K7a1vLK6T/RZFJOCcV/Ij4t+Bn7R/wrna71jT9XngjLHzraC58vCYySSoGOa0/hv+158afhlq0Ygu0EURKtDcw+ZL8qlcYc9R3pOVhJOWx/W9n999nHytjdmk3yW5COTICcbicdfavy7/AGa/+Ch/hz4nk6L44lWz1FdxUuIbdSi7FHG/PJJr9OINQtp7WGbTnFxbyniRCHGD15HHFL2lw9k4mnhsgqcipR1qqAqyAxHOT83OatDrTFe4+iiigAooooAKKKKAP//Q/fyiiigAooooADzwaqLEis4UYyMVbqInp70AfFX7d+lre/s6+KXKbnitodh7rm5hziv5Xng+yarOF4b7Xz/31g1/Wn+2BZtf/ALxbCAT+4gH/kxFX8mN+zf8JLqcTceVqbp+UlNFLY/rA/Y+0jTbL4VxXFpbpHI1ywLL1IMUWa+rnIAO7oBzXzH+yR/ySWD/AK+j/wCioq+nWxznp3pEs57X/Dug+J9Mey16xivrRkKmKXO1lbGRxg9q/Fj9tD9gjTLbT7r4i/Dm3S38pi8lpDGqKWnlH8Ty5+UH0r9vneQnERARfvZ7j2rxz4k/EXwp4D0S5u9flSZGwfIDIXOWC/dcjoTXNWkduBpuTSSufx6wR+INH1fzNL32mtwtgxoRuMCt13n5eo6da/oX/YF/ak1fxhpkPw68cgx31payS+fJKZWdpJ1VVwqBRw3rX5r/AB+tR4dvm+IWnaRdeTO32MOIcp85Z/Tb0r5W+H/xL8R+FviPo3jXT7hFtxf2xnQD5vKikVmGOn8Nc9Ordns47A8tO9j+yaHywT5LbvXtV1DmvHPgZ8QrH4l/DTRfE9o4Zry0SZxlcjcT1CkgdK9jjr0FsfMJWuS0g6UtIOlMYtFFFABRRRQB/9H9/KKKKACiiigAPSoVTgDPSpqj3cH2FNIL9Dwj9pK1F38FvFFuf44Ye3/TeOv5EvFlvJZ+N9cghXe39rzYHTpLX9hvxptft/wz1u0Az5scY/KVDX8h/wAS0/sz4n682P8AV6xcLj/tsRSk7GitFXkf1R/smybPhPAi/M32kkj0/dRV9OTuURm2544HrXzD+yYkcXwohmJw5uGA59Yoq9i8Y+LrTwho99quoTIpW3kZBkDLIpOAD1NYOo7NoqlQlWklTOd+I3xP03wTpL3c+BMiOVgy2HK44yFOOtfnlPp/if45+MUk1EOloXlMVkWWRJI2JcEk7SNuOlP8R6lqfxV8VDU23C1ilZo0wV3rJjptyD92vu74U/D6Lw1pEd88eZ5UjePGSQCuCCCPeuSlJ1H759b7OjgKWq948p+L37O3g/xF8KpNAS0iHkyG4zszh0iYd3Ffy0+ItBuvC17d+HpCYpLJnfzOMnOSBgEjvX9rs9nFNay2rrkSRsP++hiv5W/26fAo8EfHTW7RI9kEhtUU84y8IY9QK7Y0YbpHzdfH4mo7KWnyP0t/4JbfFebW/CEvg3UJSTp1nZwwkkncWMmeNoA6etfsOvynFfzFf8E3fFL6L8aotG8zEdxdW0e3I5C+ZX9OiusyB15BArW1tjlqpJqxJuOelOHFNTpSr0oMhaKKKACiiigD/9L9/KKKKACiiigAPSoOisfap6iP3T9KpPQlrVM4bx7ELnwnfwfe3KvH/A1r+Qf45Ktn8Z/EVpMNu/WbogdeBcNX9hHiyPf4du/Xav8A6EK/kH/aMTy/jnrwYcf2tdn/AMmHrjxVR2sdKouuuSB/Td+y/Mln8IFmujgxSvJtPPyrDGc5/CvA/i749u/iL4l/4RzTGYWdu6GYg8eXIoDcMF/Q1zfhH4h2tv8ABG28N6VODezXan5WB+V4VXHBz1rb8AeGZtHtbZLxC9/qr/ZmGCSu5sKSCMjrXH7fofXZHgo4ZOpWW2x6j8IPhxHLeQSTRhLaxZPLOAfPDbs5GflxivtqCJbWKOKJRhVAX/ZAHSuJ8B+HG0HSY4pV+cIuevbPqPeu5hcyMwYYwcD6V10oK6R89neNeIqtw2JZjJ5YMYy2eee1fz6/8FUPDQXxUviKJBum1G1Rm74W1b39vSv6CgDHHzzk9q/D/wD4KsQJFp1jKOratCP/ACVkrtvZHDhp8q94/OP9iTU2sP2hdFkLlVkv4sn6Bq/rL0CVpdMt5X6SxI6n1BUGv5FP2VibT46eGHUcy36Z/Jq/ri8Ju0nhzS2P/PpD/wCgCoi7kT3N5MrnPTNSKQRkcio05U/WpQAowKZAtFFFABRRRQB//9P9/KKKKACiiigBG6H6VVibcjfSrdVDGpaTdwGGKpPRofRowvEfz6Lcr6qv/oQr+Rj9onS7i/8A2hdbtY87G1K9z06ieSv65teFu+kXFs7hIwACzHH8Q71/K/8AtAWdtpvxn1+YEGVtUu/LbOV2tO4rysTW1tY+h4WwbliPfP0h/Z+8GQyaRDDqcu+4tm+1YKg/u4wh6g4/rX3d8O9Jh8ReKJNcChrKDypLb0DxkZx0PUV8w/BbwsPhb8E1u7+QXEmp6k8ClGLMBcxJgZbB7dq+2fhFY2nhXwFbPIDG3744c/MfmJ71xKm5yTPZz3FfuOakra2PbvOCKZGOFXk1Al5FOSYDyPrXJWdxPr9wGwRBnrjHB9x9K7BUWzVYrdcgjnv0r34RUXc+Gpx9mrSdy5G29PmHQ1+Ef/BVnU/MNnZg/c1a3P52r1+7MrJAhn64HOK/mk/4KXeLrbVvjXqNnZvvUXFl8uQQP9GAPQ1UnczlFyd1ofOf7Jlr9u+Ofhdcfcvk/UGv61/DUYi8PabGP4bWEfkgr+XP9gHw5NqXx/0ueNC6Q30BfgkAEP7cV/U9Z24toFiH8IA/IVKVjapbSxIn3T/vGpQcjNRxxlTmpAcjNMzFooooAKKKKAP/1P38ooooAKKKKAEPQ1n3DFoX2H5sHFXZGIU49K5zUryGw0+XUbg7Y4UZ3JOAFWonOxMZP20YLqfOv7RvxEfwd8Pb+2sXP9p3ES+TglWysqZ52kdDX81fj3XrnXPEeq67r4KPHqLqWJ3n5pc9gO5r9yPHl7dfEvxXqusKwbS/Dc+0HsVnAA5GQeR3r8JPjzf293461PSbPCj7e4PTBKTn0+leTXmnI/SsDRhhcK60d+p+6WmeHvFXjj9nqwn8Jl7m4tdXjlCBlTiKFT1cr3Ir3D4PaP8AFTWtJtIPG6S2cUDlirSxzBhv5Hyn0rov2TmiuPhBCsm1dl0TzwOIYq91nma/uhY2DxjYQXI6EN6YrbDUk1dnyLzB1KTpy7nQaVaQ6dELSEADgZHGce1agzEx/izz9Ko2ilIzbMCoiGHY9D9DU4cQ/OpxEPvZ7+mK9M8eTuzL8T6vZaDoN3fX0mxFikwSD97YSOgPpX8gf7RPjRvHfxW1nxCWMkLeWY2J/iiQL3APb0r+gv8Ab4+N1l8LvAUelrcIL27njxGCpbZKkgzgkHGR1r+ZjTtP1PXdQsdJUiW7vLxUbaCdwlbAAA5zzQNKx+wX/BK34eXN74g1Txjdx5jC2U8LHBxkyA45z+lfvoWcvtHTmvin9hr4Tv8ADP4Q6NLdR+VcahYW4dG3BgYy3UMAR1r7dAxQKTuJuAODTqYyKxyafQSFFFFABRRRQB//1f38opMijPGaE7hYWik3Cm7xnFD03FdCSV80/tFeNx4V8G3elRH/AEnVoZbWAAkHeycdiO/fFfR1xcxxB2k+VY0Lsx6YFfnP8QdYl+Ivxxg0i1PmaZpN7aTtLjMYRkTcdy5GAc5zXDipXtY9bKMIqlb2k1pHcw9ftX+H/wCzdeeIG+W/1mygmn7MXSdV5Izng+gr+en4mXV1P43mvki3PPctKWzj70pJr9dv2+P2gtD0u90r4Z6FcxyLaC4trsIyMMqY3XGGyPxFflz4m8baE9rHJaxM12WiGwhSzZYZIGc4rhdOUmfbYbGYN4KcJzXM2z+i/wDZq8VJqHwttdK0ePZcG6BcqSDtMcYPUYr7K0LSLfTYlM4H2puGbHPXjpxXzV+ybptunwxhvrRQHa4IORnrFEa+tE4j3zkA87j0FepQcIqzep+eY32fPag7jN7yNIki4jTgtn7wPtXLeLPFWj+C/Dl5r/iaQW9hblRuILcMcLwgJ6+1c147+LHg/wCHum3WoeJdWs0giUsIRNGkxC4yBuYc8iv58v2zv217z4vak/gvwhMW0pDLE6IEMjeVKGQho2J6Dmugwj5nh37XH7RF18bfG/8AbN+7f2baxLaRxli6l4nfa3KKQcH0r1L9gj9m7V/it8SrLxbqkRGkaf5V9EWCMrtb3MYK43qw4zzivNP2cP2UPiT8cPEPmm0NppcQZmN1FKmXRkJwwQjkNX9N3wb+FGgfCXwlaeEtHjVXtEcls7smRt/UgHqaZrNxtoerWOmWmmW0FlaKI4YBtjQDhR7VpVXjJc7X++nXHTmrFIxCiiigAooooAKKKKAP/9b9+gKXHGKWiphsNu4zHrTPlznPtT2PIqmrbgw9GNOSugjFHLePdXt9F8LajfzdBbyjvz8jHHANfhrNF+0l418T67qfwc06b7DexKkUkN5BFwqhCcTFTw4PWv1c/an1ptJ+GN02dokcxn6NG9eDfsRz6anw9spYDucpPkMQW/4+JK86pbnsz7TJcPJZbXrLo1+p+QXiX9hP9qnxjqmqeI/FemTT6ncSCRHkurNmVjgNgiYDkCsi3/4J1/tEwzRT3OlPJKFyjG4tMqPQfv8A1r+n661vTdOhF5qMsNvGoziUqpIPHGa8istevPH3itYtKt3i0qBpIZZHTAZ0ywZXXI2kYxXTQcHufMS9pG7Pyf8Ahn4C/wCCg/wwsTpcMF/PY7mdY/7RsUXcQoHR2PRa9A1XXf2/b+3ksItLvbVnVlMq6pZsV3DGcZ5x1r9mLa1gWHYkZBUcb/UCmxRNlHuI0LFuyiutUqbOHD2u2z+fvVf2NP2zfjFci58a69qKWrklkeSylG2Tr0mU/wAIr6Y+Cn/BLPwl4XvYda8bTpfXSjLLNaryzIQ3KTnua/YIcfKq4HsMUwxSBg0JAHfdUgcX4P8AA3g3wPYC28HaXBYxg7WEIK5bABPJPXArsBHHDL9ol4Z/l6VY+fPy4A9CO9JsDfM4ORz+VACLGRIZFOQ3UVPVdg0jowGApyc1YoAKKKKACiiigAooooA//9f9/KKYKd1FTDYbViKQPvUr90ZzUCqF3Ef3jVrkUm0YIx1OaqWwQkfLP7T3hTV/F3w6urPTEMjIxkVMqMlY3Hcj1r8j/hT42+NXwvuIvDmlaLIxV9gQXcaAb3L+hHOfWv6DJokkRoHTcpB6jI5rlbXwhpMVy119kj87g7igxkdO1eZWwrqvmXQ+wyXiSOCwlbDyjdSt+B8U+CPCfxc+LEVtqHjW5uNKs1XJt98VwrB88ZBU8ECvtfwvodh4b02DTNPRV8tFEjAY3uqgFiMnk4rdjR7dvKeLKt93y1wFA9aZBbTRMxcEhmLDA6CurD4NxWrPn62NVdtpWXY1TxTsZ2n3pQMjmlPYY710cj7nmQVpElFFFMoKKKKACiiigAooooAKKKKACiiigD//0P38ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/2Q==" alt="Three D Integrated Solutions logo" class="brand-logo">
+        <div class="brand-hero">Attendance to Payroll Builder</div>
+      </div>
+      <div class="brand-sub">Three D Integrated Solutions Ltd.</div>
+    </div>
     <h2>Steps</h2>
     <ol class="steps">
       <li><b>Upload attendance</b>Drop the monthly attendance workbook. If it has multiple sheets, the "Modify" / "Final" tab is used automatically.</li>
@@ -507,6 +613,14 @@
 
     <footer>AI-9 · Attendance-to-Payroll Builder — runs entirely in your browser, no data leaves this page.</footer>
   </main>
+
+  <!-- RIGHT STICKY NOTES -->
+  <aside class="notes-rail">
+    <div class="notes-sticky">
+      <h2>Project Conditions</h2>
+      <div id="projectNotesHost"></div>
+    </div>
+  </aside>
 
 </div>
 
@@ -961,12 +1075,110 @@ function updateCalicutPtRowVisibility(projectKey){
   document.getElementById('calicutPtRow').style.display = (isCalicutOnlyProject || uploadedEmployeesHaveCalicut) ? 'flex' : 'none';
 }
 
+/* ---------- Project Conditions sticky notes ---------- */
+const PROJECT_CONDITIONS = {
+  nagpur: { salCal:'26 days (30 for Site Incharge)', ot:'Fixed 26-day divisor for Site Incharge; own Sal Cal Days for others',
+    pf:'Standard capped formula. Site Incharge: IF(TEwoOT&lt;15000, prorated, else 1800)', fair:'Site Incharge gets PERF INCEN ₹4,000 fixed by default',
+    pt:'Maharashtra — ₹200/mo if gross &gt;₹10,000 (₹300 in Feb)', lwf:'₹25 if gross &gt;₹3,000 — Jun &amp; Dec only', esi:'Standard: 0.75% if Th ≤₹21,000' },
+  amritsar: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'None currently',
+    pt:'Punjab — New Regime: ₹0 if annual ≤₹3L, else ₹200/mo', lwf:'₹5, no wage limit — every month', esi:'Standard' },
+  ahmedabad: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
+    pf:'Standard capped formula', fair:'Bhaskar Vootla (PBBAD22) — full fixed LOI wage',
+    pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
+  chennai: { salCal:'Fixed 30 days (TN convention)', ot:'Own Sal Cal Days (30)',
+    pf:'PF capped at ₹1,800 max, but calculated using ACTUAL uncapped Pay Days (e.g. 31)', fair:'None currently',
+    pt:'Tamil Nadu — ₹0 up to ₹21,000; ₹30–208 by slab (official monthly rate, remitted half-yearly). <b>PT=₹0 for Chennai in every project</b> (global exemption)', lwf:'₹20 if gross &gt;₹15,000 — December only', esi:'Standard. Uses TN wage rates, not CLC' },
+  kolkata: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
+    pf:'Standard capped formula', fair:'Munna Mondal (NEC002) — flat HRA ₹742 (not prorated)',
+    pt:'West Bengal — ₹0–200 by slab', lwf:'₹3 if gross &gt;₹1,600 — Jun &amp; Dec only', esi:'Standard' },
+  rajkot: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'Yadav Sanjaykumar (BHS-HR08) — HRA/ProjAllow revised May-26; Chavda Kaushal (BHS-HR22) — PERF INCEN ₹2,000',
+    pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
+  surat: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
+    pf:'IF(TE&gt;=15000, 1800, TE×12%) — no proration', fair:'Nischal Shantilal Patel (BHS-S30) — full fixed wage, revised May-26',
+    pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
+  chandigarh: { salCal:'Actual calendar days (28/30/31)', ot:'Fixed 26-day divisor always',
+    pf:'Standard capped formula', fair:'None currently',
+    pt:'Chandigarh — No PT levied (distinct from Punjab)', lwf:'₹5 only if gross ≤₹15,000 — every month', esi:'Standard' },
+  bhubaneshwar: { salCal:'Fixed 30 days', ot:'Own Sal Cal Days (30)',
+    pf:'Standard capped formula', fair:'Debasis Rout (BHS-B001) — PERF INCEN ₹4,000 fixed',
+    pt:'Odisha — No PT levied', lwf:'₹10, no wage limit — Jun &amp; Dec only', esi:'Standard' },
+  calicutbhs: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
+    pf:'IF(TEwoOT&lt;15000, prorated ceiling formula, else 1800)', fair:'Rijith T (BHS-CAL05) — HRA ₹298 + PERF INCEN ₹5,000 (overrides ₹2,000 default)',
+    pt:'<b>Manual entry required</b> — depends on rolling 6-month data, not auto-calculated', lwf:'₹50, no wage limit — every month', esi:'Standard.<br><i>Every employee gets ₹2,000 default PERF INCEN unless overridden.</i>' },
+  raipur: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'Dharam Lal Sahu (BHS-R001) — HRA revised May-26; Lokesh Ojha (BHS-R005) — PERF INCEN ₹2,000',
+    pt:'Chhattisgarh — No PT levied', lwf:'₹15 if gross &gt;₹10,000 — Jun &amp; Dec only', esi:'Standard' },
+  varanasi: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'Dilip Kumar Gupta — PERF INCEN ₹2,000; Kuldeep Yadav — HRA ₹2,792+Tel ₹500',
+    pt:'Uttar Pradesh — No PT levied', lwf:'Not applicable in UP', esi:'Standard' },
+  vizag: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'4 employees with PERF INCEN ₹2,000–4,000 (Rayi Giri, Vangalapudi Rajkumar, Chitturi Vijay Kumar, Potnuru Dilip Kumar)',
+    pt:'Andhra Pradesh — ₹0–200 by slab', lwf:'₹30, no wage limit — December only', esi:'Standard' },
+  necegate: { salCal:'Actual calendar days (28/30/31) — differs from BHS Calicut\'s fixed 26', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'None currently',
+    pt:'<b>Manual entry required</b> — same Calicut rolling-data issue', lwf:'₹50, no wage limit — every month', esi:'Standard' },
+  pbb21: { salCal:'Actual calendar days (28/30/31), per-employee area', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'Amit Kumar Sahoo (BHUB-001) — PERF INCEN ₹2,000; Sunil Kumar Prajapati (AMRT-0036) — PERF INCEN ₹2,000',
+    pt:'Multi-state — resolved per employee location', lwf:'Resolved per employee location', esi:'Standard.<br><i>Manual Performance Incentive section visible for this project.</i>' },
+  jammu: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'None currently',
+    pt:'<b>Unconfirmed</b> — no J&amp;K PT data yet', lwf:'<b>Unconfirmed</b> — no J&amp;K LWF data yet', esi:'Standard.<br><i>Manual Performance Incentive section visible for this project.</i>' },
+  bhsitcvjwd: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'5 employees: 3 with HRA+Tel stacked, Neeraj Kumar (full fixed wage + PERF INCEN ₹7,500), Suneel Kumar (HRA/Tel/ProjAllow + PERF INCEN ₹4,000)',
+    pt:'Andhra Pradesh — ₹0–200 by slab', lwf:'₹30, no wage limit — December only', esi:'Standard' },
+  bhspune: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
+    pf:'IF(TE&gt;15000, 1800, prorated using UNCAPPED Pay Days)', fair:'4 employees: Deepak Patidar &amp; Saurabh Gupta (month-varying HRA/allowances), Venkatesh Nayak (PERF INCEN ₹3,649), Kiran Shankar Desai (PERF INCEN from Jun-26 + one-time ₹14,000 arrear)',
+    pt:'Maharashtra — ₹200/mo if gross &gt;₹10,000', lwf:'₹25 if gross &gt;₹3,000 — Jun &amp; Dec only', esi:'Standard' },
+  ambulift: { salCal:'Fixed 26 for Jamnagar/Kanpur; actual days for others', ot:'Fixed 26-day divisor always',
+    pf:'Standard capped formula (Siddant Paul override: 12% of actual, no cap)', fair:'Vanol Ajay &amp; Pawan Singh — reliever pay split by role coverage',
+    pt:'Resolved per employee\'s own state (many states mapped)', lwf:'Resolved per employee\'s own state', esi:'Standard.<br><i>Chennai employees auto-switch to TN wage rates.</i>' },
+  asft: { salCal:'Fixed 26 for Calicut; actual days for others', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula (Siddant Paul override: 12% of actual, no cap)', fair:'None currently',
+    pt:'<b>Manual entry for Calicut</b>; resolved per state elsewhere. <b>Chennai PT=₹0</b> for this project specifically', lwf:'Resolved per employee\'s own state', esi:'Standard.<br><i>Attendant/Helper = Unskilled (project-specific rule).</i>' },
+  pbb17: { salCal:'Fixed 26 for Goa; actual days for others (incl. Pune)', ot:'Fixed 26-day divisor always',
+    pf:'Standard capped formula', fair:'None currently',
+    pt:'Resolved per employee\'s own state', lwf:'Resolved per employee\'s own state', esi:'Standard' },
+  pbb60: { salCal:'Fixed 26 for Calicut &amp; Goa; actual days for others', ot:'Chennai: own Sal Cal Days. Every other location: fixed 26',
+    pf:'Standard capped formula', fair:'Laxmidhar Nayak &amp; Arijit Bhattacharjee (Kolkata) — HRA stacked',
+    pt:'<b>Manual entry for Calicut</b>; resolved per state elsewhere', lwf:'Resolved per employee\'s own state', esi:'Standard' },
+  custom: { salCal:'Actual calendar days (28/30/31) — adjust manually', ot:'Own Sal Cal Days',
+    pf:'Standard capped formula', fair:'None — configure manually',
+    pt:'Maharashtra (default) — adjust manually if needed', lwf:'Maharashtra rule applies by default', esi:'Standard' }
+};
+
+function renderProjectNotes(projectKey){
+  const c = PROJECT_CONDITIONS[projectKey] || PROJECT_CONDITIONS.custom;
+  const host = document.getElementById('projectNotesHost');
+  const rows = [
+    ['Sal Cal Days', c.salCal],
+    ['OT Amount', c.ot],
+    ['PF Formula', c.pf],
+    ['ESI', c.esi],
+    ['PT (Professional Tax)', c.pt],
+    ['LWF', c.lwf],
+  ];
+  let html = rows.map(([label, body]) => `
+    <div class="note-card">
+      <div class="note-label">${label}</div>
+      <div class="note-body">${body}</div>
+    </div>`).join('');
+  html += `
+    <div class="note-card warn">
+      <div class="note-label">Fair Wage Employees</div>
+      <div class="note-body">${c.fair}</div>
+    </div>`;
+  host.innerHTML = html;
+}
+
 document.getElementById('projectSelect').addEventListener('change', e=>{
   const p = PROJECT_PRESETS[e.target.value];
   document.getElementById('salCalMode').value = p.salCal;
   document.getElementById('payDaysMode').value = p.payDays;
   document.getElementById('manualIncenSection').style.display = p.showManualIncenSection ? 'block' : 'none';
   updateCalicutPtRowVisibility(e.target.value);
+  renderProjectNotes(e.target.value);
 });
 document.getElementById('projectSelect').dispatchEvent(new Event('change'));
 
