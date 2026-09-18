@@ -903,13 +903,26 @@ const BANK_DATA = {
    but wage/skill classification is calculated as if they held a different designation
    (e.g. someone whose LOI title is "Attendant" but is paid at "Technician Cum Driver" rates). */
 /* Reliever employees — base LOI role is Driver/Attendant (Semi-Skilled), but they cover for
-   both Driver/Attendant and Technician Cum Driver roles on those employees' WO/Absent days.
-   coverage: { <Skill>: days_covered_at_that_role_rate }. Register shows Basic/VDA at the base
-   LOI role (Semi-Skilled), plus the earned difference as PERF INCEN. Update coverage days each
-   month based on the actual attendance file. */
+   colleagues' WO/Absent days, working both Driver/Attendant (Semi-Skilled) and Technician Cum
+   Driver (Skilled) roles. Rather than a hardcoded day-count (which goes stale every month),
+   coverageFor lists the specific colleague Emp IDs to mirror: each month, the reliever's days
+   in that colleague's role = that colleague's own (WO + AB) days that month — since whenever
+   a regular employee is off or absent, their reliever covers that day in their place.
+   Register shows Basic/VDA at the base LOI role (Semi-Skilled), plus the earned difference
+   as PERF INCEN. */
 const RELIEVER_OVERRIDES = {
-  'AMBJAM04': { name:'Vanol Ajay', baseSkill:'Semi-Skilled', coverage:{ 'Semi-Skilled':4, 'Skilled':4 } },
-  'AMBK005':  { name:'Pawan Singh', baseSkill:'Semi-Skilled', coverage:{ 'Semi-Skilled':5, 'Skilled':7 } }
+  'AMBJAM04': { name:'Vanol Ajay', baseSkill:'Semi-Skilled', coverageFor: [
+    { code:'AMBJAM02', skill:'Semi-Skilled' }, // Parmar Arvind, Driver/Attendant
+    { code:'AMBJAM01', skill:'Skilled' }        // Zala Mahesh Chamanbhai, Technician Cum Driver
+  ] },
+  'AMBJAM05': { name:'Vaghela Ashwin', baseSkill:'Semi-Skilled', coverageFor: [ // Replacement for Vanol Ajay
+    { code:'AMBJAM02', skill:'Semi-Skilled' }, // Parmar Arvind, Driver/Attendant
+    { code:'AMBJAM01', skill:'Skilled' }        // Zala Mahesh Chamanbhai, Technician Cum Driver
+  ] },
+  'AMBK005':  { name:'Pawan Singh', baseSkill:'Semi-Skilled', coverageFor: [
+    { code:'AMBK004', skill:'Semi-Skilled' }, // Atul Kumar Mishra, Driver/Attendant
+    { code:'AMBK003', skill:'Skilled' }        // Abhishek Kumar, Technician Cum Driver
+  ] }
 };
 
 const SKILL_DESIGNATION_OVERRIDE = {
@@ -1027,7 +1040,7 @@ const STATE_FOR_LOCATION = {
   bhuj: 'Gujarat', vijaywada: 'Andhra Pradesh', vijayawada: 'Andhra Pradesh',
   dehradun: 'Uttarakhand', darbanga: 'Bihar', darbhanga: 'Bihar',
   dhimapur: 'Nagaland', dimapur: 'Nagaland', gorakhpur: 'Uttar Pradesh',
-  hubli: 'Karnataka', imphal: 'Manipur', jodhpur: 'Rajasthan',
+  hubli: 'Karnataka', imphal: 'Manipur', jodhpur: 'Rajasthan', udaipur: 'Rajasthan',
   jharsuguda: 'Odisha-Jharsuguda', jorahat: 'Assam', jorhat: 'Assam',
   leh: 'Ladakh', patna: 'Bihar', 'port blair': 'Andaman & Nicobar',
   silchar: 'Assam', siliguri: 'West Bengal',
@@ -1046,11 +1059,11 @@ const PROJECT_PRESETS = {
   nagpur:    { zone:'A', wageBasis:'CLC', state:'Maharashtra', salCal:'mixed',  payDays:'mixed', nagpurSiteInchargeRules:true },
   amritsar:  { zone:'B', wageBasis:'CLC', state:'Punjab',      salCal:'month',  payDays:'pr_wo' },
   ahmedabad: { zone:'A', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_wo' },
-  chennai:   { zone:'A', wageBasis:'TN',  state:'Tamil Nadu',  salCal:'fixed30',payDays:'pr_wo', pfUncappedPayDays:true },
+  chennai:   { zone:'A', wageBasis:'TN',  state:'Tamil Nadu',  salCal:'fixed30',payDays:'pr_wo', pfChennaiFormula:true },
   kolkata:   { zone:'A', wageBasis:'CLC', state:'West Bengal', salCal:'fixed26',payDays:'pr_wo' },
   rajkot:    { zone:'B', wageBasis:'CLC', state:'Gujarat',     salCal:'month',  payDays:'pr_wo' },
   surat:     { zone:'B', wageBasis:'CLC', state:'Gujarat',     salCal:'fixed26',payDays:'pr_only', pfActualThresholdFormula:true },
-  chandigarh:{ zone:'B', wageBasis:'CLC', state:'Chandigarh',  salCal:'month',  payDays:'pr_wo', otDivisorFixed26:true },
+  chandigarh:{ zone:'B', wageBasis:'CLC', state:'Chandigarh',  salCal:'month',  payDays:'pr_wo', otDivisorFixed26:true, lwfStateOverride:'Punjab' },
   bhubaneshwar:{ zone:'B', wageBasis:'CLC', state:'Odisha',    salCal:'fixed30',payDays:'pr_wo' },
   calicutbhs:{ zone:'B', wageBasis:'CLC', state:'Kerala',      salCal:'fixed26',payDays:'pr_only', defaultPerfIncen:2000, pfCalicutFormula:true, useCalicutManualPt:true },
   raipur:    { zone:'B', wageBasis:'CLC', state:'Chhattisgarh',salCal:'month',  payDays:'pr_wo' },
@@ -1516,8 +1529,19 @@ function computeRegister(employees, cfg){
       // Base LOI role (Semi-Skilled Driver/Attendant) sets Basic (Th) / VDA (Th) as normal.
       const [dBasic, dVda] = CLC_RATES[zone][relieverRule.baseSkill];
       basicTh = dBasic*26; vdaTh = dVda*26;
+      // Resolve this month's actual coverage: either a hardcoded {skill: days} map, or —
+      // preferably — computed fresh each month from named colleagues' own (WO + AB) days.
+      let coverage = relieverRule.coverage;
+      if(relieverRule.coverageFor){
+        coverage = {};
+        relieverRule.coverageFor.forEach(({code, skill}) => {
+          const colleague = employees.find(emp => emp.code === code);
+          const missedDays = colleague ? ((colleague.wo||0) + (colleague.ab||0)) : 0;
+          coverage[skill] = (coverage[skill]||0) + missedDays;
+        });
+      }
       let actualTotal = 0, totalDays = 0;
-      Object.entries(relieverRule.coverage).forEach(([roleSkill, days])=>{
+      Object.entries(coverage).forEach(([roleSkill, days])=>{
         const [rb, rv] = CLC_RATES[zone][roleSkill];
         actualTotal += (rb+rv)*days;
         totalDays += days;
@@ -1593,11 +1617,13 @@ function computeRegister(employees, cfg){
     else if(cfg.salCal === 'ambulift') salCal = AMBULIFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'asft') salCal = ASFT_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === '17pbb') salCal = PBB17_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
-    else if(cfg.salCal === '60pbb') salCal = PBB60_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26 : daysInMonthFromLabel(cfg.monthYear);
+    else if(cfg.salCal === '60pbb') salCal = PBB60_FIXED26_SITES.includes(String(e.location||'').trim().toLowerCase()) ? 26
+      : String(e.location||'').trim().toLowerCase() === 'chennai' ? 30
+      : daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'month') salCal = daysInMonthFromLabel(cfg.monthYear);
     else if(cfg.salCal === 'fixed26') salCal = 26;
     else if(cfg.salCal === 'fixed30') salCal = 30;
-    else salCal = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase()) ? 30 : 26;
+    else salCal = /SUPERVISOR|INCHARGE/.test(e.desig.toUpperCase()) ? daysInMonthFromLabel(cfg.monthYear) : 26;
 
     let payDays;
     // If PR Days = 0, employee may be on Tour/OD, which counts as Present.
@@ -1613,7 +1639,7 @@ function computeRegister(employees, cfg){
     else if(cfg.payDays === 'ambulift') payDays = isAmbulift26Site ? effectivePr : (effectivePr + e.wo);
     else if(cfg.payDays === 'asft') payDays = isAsft26Site ? effectivePr : (effectivePr + e.wo);
     else if(cfg.payDays === '17pbb') payDays = is17pbb26Site ? effectivePr : (effectivePr + e.wo);
-    else if(cfg.payDays === '60pbb') payDays = is60pbb26Site ? 26 : (effectivePr + e.wo);
+    else if(cfg.payDays === '60pbb') payDays = is60pbb26Site ? effectivePr : (effectivePr + e.wo);
     else payDays = effectivePr + e.wo;
 
     const basic = Math.round(basicTh/salCal*payDays);
@@ -1640,10 +1666,11 @@ function computeRegister(employees, cfg){
     // Pay Days used for PF/PF Earning is capped at Sal Cal Days — so PF never exceeds the
     // statutory ceiling for that cycle, even if actual Pay Days (e.g. PR+WO) totals more.
     // Applies generally: fixed-26 sites cap at 26, fixed-30 sites cap at 30, etc.
-    // PBB Chennai: PF always uses actual Pay Days uncapped, even if it exceeds the fixed
-    // Sal Cal Days of 30 (e.g. Pay Days=31). Every other project caps Pay Days at Sal Cal Days.
-    // PBB Chennai: PF is calculated using actual Pay Days uncapped (even beyond Sal Cal Days=30),
-    // but the resulting PF amount itself is still capped at ₹1,800 maximum.
+    // PBB Chennai (standalone or as a location within 60 PBB): Sal Cal Days stays fixed at 30
+    // for wage purposes, but PF specifically divides by the actual days in that calendar month
+    // instead — result still capped at ₹1,800.
+    const pfDaysInMonth = daysInMonthFromLabel(cfg.monthYear);
+    const isChennaiPfRule = cfg.pfChennaiFormula || is60pbbChennai;
     const pfPayDays = cfg.pfUncappedPayDays ? payDays : ((payDays > salCal) ? salCal : payDays);
     const pf = PF_ON_ACTUAL_OVERRIDES[e.code]
       ? Math.round(teWoOt*0.12)
@@ -1653,11 +1680,15 @@ function computeRegister(employees, cfg){
       ? (teWoOt<15000 ? Math.round((15000*0.12)/salCal*pfPayDays) : 1800)
       : cfg.pfPuneFormula
       ? (te>15000 ? 1800 : Math.min(Math.round((15000*0.12)/salCal*payDays), 1800))
+      : isChennaiPfRule
+      ? Math.min(Math.round((15000*0.12)/pfDaysInMonth*payDays), 1800)
       : cfg.pfUncappedPayDays
       ? Math.min(Math.round((15000*0.12)/salCal*pfPayDays), 1800)
       : Math.round((15000*0.12)/salCal*pfPayDays);
     const pfEarn = cfg.pfActualThresholdFormula
       ? Math.round(te>=15000 ? 15000 : te)
+      : isChennaiPfRule
+      ? Math.min(Math.round(15000/pfDaysInMonth*payDays), 15000)
       : cfg.pfUncappedPayDays
       ? Math.min(Math.round(15000/salCal*pfPayDays), 15000)
       : Math.round(15000/salCal*pfPayDays);
@@ -1680,7 +1711,7 @@ function computeRegister(employees, cfg){
     const pt = isPtExemptLocation ? 0
       : isCalicutLocation ? (cfg.calicutPtManual || 0)
       : (ptRule ? ptRule.calc(te, ptAnnualBasis, cfg.monthYear) : 0);
-    const lwfRule = LWF_RULES[effectiveState];
+    const lwfRule = LWF_RULES[cfg.lwfStateOverride || effectiveState];
     const currentMonth = monthNumberFromLabel(cfg.monthYear);
     const lwfMonthApplies = lwfRule && (lwfRule.months === 'all' || (currentMonth!==null && lwfRule.months.includes(currentMonth)));
     const lwf = lwfMonthApplies ? lwfRule.calc(te) : 0;
@@ -1789,9 +1820,12 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
       useCalicutManualPt: !!PROJECT_PRESETS[projectSel].useCalicutManualPt,
       otDivisorFixed26: !!PROJECT_PRESETS[projectSel].otDivisorFixed26,
       pfUncappedPayDays: !!PROJECT_PRESETS[projectSel].pfUncappedPayDays,
+      pfChennaiFormula: !!PROJECT_PRESETS[projectSel].pfChennaiFormula,
+      lwfStateOverride: PROJECT_PRESETS[projectSel].lwfStateOverride || null,
       pfPuneFormula: !!PROJECT_PRESETS[projectSel].pfPuneFormula,
       pfActualThresholdFormula: !!PROJECT_PRESETS[projectSel].pfActualThresholdFormula,
       pfCalicutFormula: !!PROJECT_PRESETS[projectSel].pfCalicutFormula,
+      nagpurSiteInchargeRules: !!PROJECT_PRESETS[projectSel].nagpurSiteInchargeRules,
       defaultPerfIncen: PROJECT_PRESETS[projectSel].defaultPerfIncen || 0,
       salCal: document.getElementById('salCalMode').value,
       payDays: document.getElementById('payDaysMode').value,
