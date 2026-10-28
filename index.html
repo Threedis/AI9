@@ -451,11 +451,11 @@
       </div>
       <div class="formula-block">
         <div class="name">PF</div>
-        <code>ROUND(15000 × 12% / Sal Cal Days × Pay Days)</code>
+        <code>IF(Basic+VDA ≥ 25000, 25000×12%, (Basic+VDA)×12%)</code>
       </div>
       <div class="formula-block">
         <div class="name">PF Earning</div>
-        <code>ROUND(15000 / Sal Cal Days × Pay Days)</code>
+        <code>MIN(Basic+VDA, 25000)</code>
       </div>
       <div class="formula-block">
         <div class="name">ESI</div>
@@ -627,9 +627,9 @@
 <script>
 /* ---------- Wage tables (Central CLC, Apr–Sep 2026) ---------- */
 const CLC_RATES = {
-  A: { Unskilled:[523,304], 'Semi-Skilled':[579,339], Skilled:[637,371], 'Highly Skilled':[693,401] },
-  B: { Unskilled:[437,256], 'Semi-Skilled':[494,287], Skilled:[579,339], 'Highly Skilled':[637,371] },
-  C: { Unskilled:[350,206], 'Semi-Skilled':[410,240], Skilled:[494,287], 'Highly Skilled':[579,339] }
+  A: { Unskilled:[523,317], 'Semi-Skilled':[579,354], Skilled:[637,387], 'Highly Skilled':[693,418] },
+  B: { Unskilled:[437,267], 'Semi-Skilled':[494,300], Skilled:[579,354], 'Highly Skilled':[637,387] },
+  C: { Unskilled:[350,215], 'Semi-Skilled':[410,251], Skilled:[494,300], 'Highly Skilled':[579,354] }
 };
 
 /* Tamil Nadu State — W.E.F 01.04.2026 (Basic+DA monthly, official figures; Monthly = Daily x 30) */
@@ -819,15 +819,23 @@ const FAIR_WAGE_OVERRIDES = {
   'BHS-S30': { name:'Nischal Shantilal Patel', salCal:26, payDaysMode:'pr_only',
     // Revised salary structure effective May-26 onward
     basic: (monthLabel) => isMay26OrLater(monthLabel) ? 16562 : 26208,
-    vda: (monthLabel) => isMay26OrLater(monthLabel) ? 9646 : 0,
-    hra: (monthLabel) => isMay26OrLater(monthLabel) ? 10813 : 11185,
+    vda: (monthLabel) => isMay26OrLater(monthLabel) ? 10062 : 0, // revised CLC
+    hra: (monthLabel) => isMay26OrLater(monthLabel) ? 10397 : 11185,
     telephone: 500,
     projAllow: (monthLabel) => isMay26OrLater(monthLabel) ? 5153 : 0
   },
   // 60 PBB Srinagar — fair wage employee (Sal Cal/Pay Days follow the normal Srinagar site rule, not fixed)
   'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra:4800, telephone:1000 },
   // BHS ITC Vijayawada
-  'HO-0254': { name:'Neeraj Kumar', basic:20500, vda:0, hra:10250, telephone:500, projAllow:9790, perfIncen:7500 }
+  'HO-0254': { name:'Neeraj Kumar', basic:20500, vda:0, hra:10250, telephone:500, projAllow:9790, perfIncen:7500 },
+  // BHS ITC Vijayawada — 4 fair wage employees revised per signed LOI/Annexure A, full fixed
+  // Basic+VDA+HRA (replacing the previous standard-CLC-Basic/VDA + stacked-allowance setup):
+  'BHSITC_V06': { name:'Krishna Kumar Gaur', basic:16562, vda:8944, hra:1994, telephone:500 }, // Sr. Technician, LOI 18-Jun-2025
+  // Suneel Kumar — Sr. Engineer-BHS (SM-2), Compensation Fitment Form WEF 01/01/2026. No VDA component
+  // at this grade. Relocation Allowance ₹4,000/month (discretionary, paid while posted at Vijayawada;
+  // excluded from CTC per the letter but still paid monthly — tracked as the flat Relocation field,
+  // replacing the previous PERF INCEN ₹4,000 treatment).
+  'HO-0430': { name:'Suneel Kumar', basic:25786, vda:0, hra:12893, telephone:1000, projAllow:9943, relocation:4000 }
 };
 
 /* Fixed additional allowances (HRA/Telephone/Proj Allow etc.) stacked on top of the normal
@@ -835,6 +843,7 @@ const FAIR_WAGE_OVERRIDES = {
 /* Employee bank details, from Master_Bank_Advise.xlsx — used to populate the download's
    Bank Name / A/c No / IFSC columns automatically by Emp ID. */
 const BANK_DATA = {
+  'PBBAD22': { bank:'HDFC BANK LTD.', acno:'50100011857447', ifsc:'HDFC0000141' }, // Bhaskar Vootla
   'BHS-HR08': { bank:'HDFC BANK LTD.', acno:'50100017632782', ifsc:'HDFC0000006' },
   'BHS-HR01': { bank:'OTHER BANKS', acno:'21125035276', ifsc:'RMGB0001125' },
   'BHS-HR03': { bank:'OTHER BANKS', acno:'309005342741', ifsc:'RATN0000232' },
@@ -939,7 +948,7 @@ const MANUAL_ARREAR_OVERRIDES = {
 };
 
 const ADDITIONAL_ALLOWANCE_OVERRIDES = {
-  'NEC002': { name:'Munna Mondal', hraFixed:742 },
+  'NEC002': { name:'Munna Mondal', hraFixed:326 },
   'BHS-HR08': { name:'Yadav Sanjaykumar', telephone:500,
     // HRA: 7579 before May-26, 13104 from May-26 onward
     hra: (monthLabel) => {
@@ -947,7 +956,7 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
       const yr = (String(monthLabel||'').match(/(\d{2,4})$/)||[])[1];
       if(mn!==null && yr){
         const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
-        if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 13104;
+        if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 12688;
       }
       return 7579;
     },
@@ -974,14 +983,14 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
     // From May-26 onward: 2592. Before that: 592.
     if(mn!==null && yr){
       const yrNum = yr.length===2 ? 2000+Number(yr) : Number(yr);
-      if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 2592;
+      if(yrNum>2026 || (yrNum===2026 && mn>=5)) return 2176;
     }
     return 592;
   } },
   'BHS-R005':  { name:'Lokesh Ojha', perfIncen:2000 },
   // BHS Varanasi
   'BHSVNS-0005': { name:'Dilip Kumar Gupta', perfIncen:2000 },
-  'BHSVNS-0012': { name:'Kuldeep Yadav', hra:2792, telephone:500 },
+  'BHSVNS-0012': { name:'Kuldeep Yadav', hra:1084, telephone:500 },
   // BHS Vizag
   'BHSITC_VI04': { name:'Rayi Giri', perfIncen:2000 },
   'BHS-V003':  { name:'Vangalapudi Rajkumar', perfIncen:2000 },
@@ -990,22 +999,22 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   // 21 PBB
   'BHUB-001':  { name:'Amit Kumar Sahoo', perfIncen:2000 },
   // 60 PBB Kolkata — fair wage employees (HRA stacked on top of normal MW Basic/VDA)
-  'PBBK601': { name:'Laxmidhar Nayak', hra:4556 },
+  // Laxmidhar Nayak (PBBK601) moved to FAIR_WAGE_OVERRIDES — see above (full fixed Basic/VDA/HRA, revised)
   'PBBK602': { name:'Arijit Bhattacharjee', hra:9506 },
-  // BHS ITC Vijayawada — fair wage employees (HRA/Telephone/Proj Allow stacked on top of normal MW Basic/VDA)
-  'BHSITC_V06': { name:'Krishna Kumar Gaur', hra:1292, telephone:500 },
-  'BHSITC_V17': { name:'Gorrela Ashok', hra:3292, telephone:500 },
-  'BHSITC_V18': { name:'Anil', hra:1632, telephone:500 },
-  'HO-0430':    { name:'Suneel Kumar', hra:10273, telephone:750, projAllow:6660, perfIncen:4000 },
+  // 60 PBB Kolkata — Laxmidhar Nayak (Supervisor → Highly Skilled): revised CLC Basic/VDA + HRA 2814
+  'PBBK601': { name:'Laxmidhar Nayak', hra:2814 },
+  // BHS ITC Vijayawada — revised CLC Basic/VDA + HRA/Telephone (Krishna Kumar Gaur & Suneel Kumar stay in FAIR_WAGE_OVERRIDES)
+  'BHSITC_V17': { name:'Gorrela Ashok', hra:1576, telephone:500 },
+  'BHSITC_V18': { name:'Anil', hra:90, telephone:500 },
   // BHS O&M Pune
   'BHS-PUN07':  { name:'Deepak Patidar', // Site Incharge
-    hra: (m) => isMay26OrLater(m) ? 5093 : 4556,
+    hra: (m) => isMay26OrLater(m) ? 4651 : 4556,
     perfIncen: 5000,
     telephone: (m) => isMay26OrLater(m) ? 500 : 0,
     projAllow: (m) => isMay26OrLater(m) ? 4556 : 0
   },
   'BHS-PUN35':  { name:'Saurabh Gupta', // Sr. Engineer
-    hra: (m) => isMay26OrLater(m) ? 13253 : 9883,
+    hra: (m) => isMay26OrLater(m) ? 12811 : 9883,
     telephone: (m) => isMay26OrLater(m) ? 500 : 1000,
     projAllow: (m) => isMay26OrLater(m) ? 5000 : 2390,
     retention: 2000
@@ -1091,58 +1100,58 @@ function updateCalicutPtRowVisibility(projectKey){
 /* ---------- Project Conditions sticky notes ---------- */
 const PROJECT_CONDITIONS = {
   nagpur: { salCal:'26 days (30 for Site Incharge)', ot:'Fixed 26-day divisor for Site Incharge; own Sal Cal Days for others',
-    pf:'Standard capped formula. Site Incharge: IF(TEwoOT&lt;15000, prorated, else 1800)', fair:'Site Incharge gets PERF INCEN ₹4,000 fixed by default',
+    pf:'Standard capped formula (₹25,000 ceiling). Site Incharge: IF(TEwoOT&lt;25000, prorated, else 3000)', fair:'Site Incharge gets PERF INCEN ₹4,000 fixed by default',
     pt:'Maharashtra — ₹200/mo if gross &gt;₹10,000 (₹300 in Feb)', lwf:'₹25 if gross &gt;₹3,000 — Jun &amp; Dec only', esi:'Standard: 0.75% if Th ≤₹21,000' },
   amritsar: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'None currently',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'Punjab — New Regime: ₹0 if annual ≤₹3L, else ₹200/mo', lwf:'₹5, no wage limit — every month', esi:'Standard' },
   ahmedabad: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'Standard capped formula', fair:'Bhaskar Vootla (PBBAD22) — full fixed LOI wage',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Bhaskar Vootla (PBBAD22) — full fixed LOI wage',
     pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
   chennai: { salCal:'Fixed 30 days (TN convention)', ot:'Own Sal Cal Days (30)',
-    pf:'PF capped at ₹1,800 max, but calculated using ACTUAL uncapped Pay Days (e.g. 31)', fair:'None currently',
+    pf:'PF capped at ₹3,000 max, but calculated using ACTUAL uncapped Pay Days (e.g. 31)', fair:'None currently',
     pt:'Tamil Nadu — ₹0 up to ₹21,000; ₹30–208 by slab (official monthly rate, remitted half-yearly). <b>PT=₹0 for Chennai in every project</b> (global exemption)', lwf:'₹20 if gross &gt;₹15,000 — December only', esi:'Standard. Uses TN wage rates, not CLC' },
   kolkata: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'Standard capped formula', fair:'Munna Mondal (NEC002) — flat HRA ₹742 (not prorated)',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Munna Mondal (NEC002) — flat HRA ₹742 (not prorated)',
     pt:'West Bengal — ₹0–200 by slab', lwf:'₹3 if gross &gt;₹1,600 — Jun &amp; Dec only', esi:'Standard' },
   rajkot: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'Yadav Sanjaykumar (BHS-HR08) — HRA/ProjAllow revised May-26; Chavda Kaushal (BHS-HR22) — PERF INCEN ₹2,000',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Yadav Sanjaykumar (BHS-HR08) — HRA/ProjAllow revised May-26; Chavda Kaushal (BHS-HR22) — PERF INCEN ₹2,000',
     pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
   surat: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'IF(TE&gt;=15000, 1800, TE×12%) — no proration', fair:'Nischal Shantilal Patel (BHS-S30) — full fixed wage, revised May-26',
+    pf:'IF(TE&gt;=25000, 3000, TE×12%) — no proration', fair:'Nischal Shantilal Patel (BHS-S30) — full fixed wage, revised May-26',
     pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
   chandigarh: { salCal:'Actual calendar days (28/30/31)', ot:'Fixed 26-day divisor always',
-    pf:'Standard capped formula', fair:'None currently',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'Chandigarh — No PT levied (distinct from Punjab)', lwf:'₹5 only if gross ≤₹15,000 — every month', esi:'Standard' },
   bhubaneshwar: { salCal:'Fixed 30 days', ot:'Own Sal Cal Days (30)',
-    pf:'Standard capped formula', fair:'Debasis Rout (BHS-B001) — PERF INCEN ₹4,000 fixed',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Debasis Rout (BHS-B001) — PERF INCEN ₹4,000 fixed',
     pt:'Odisha — No PT levied', lwf:'₹10, no wage limit — Jun &amp; Dec only', esi:'Standard' },
   calicutbhs: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'IF(TEwoOT&lt;15000, prorated ceiling formula, else 1800)', fair:'Rijith T (BHS-CAL05) — HRA ₹298 + PERF INCEN ₹5,000 (overrides ₹2,000 default)',
+    pf:'IF(TEwoOT&lt;25000, prorated ceiling formula, else 3000)', fair:'Rijith T (BHS-CAL05) — HRA ₹298 + PERF INCEN ₹5,000 (overrides ₹2,000 default)',
     pt:'<b>Manual entry required</b> — depends on rolling 6-month data, not auto-calculated', lwf:'₹50, no wage limit — every month', esi:'Standard.<br><i>Every employee gets ₹2,000 default PERF INCEN unless overridden.</i>' },
   raipur: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'Dharam Lal Sahu (BHS-R001) — HRA revised May-26; Lokesh Ojha (BHS-R005) — PERF INCEN ₹2,000',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Dharam Lal Sahu (BHS-R001) — HRA revised May-26; Lokesh Ojha (BHS-R005) — PERF INCEN ₹2,000',
     pt:'Chhattisgarh — No PT levied', lwf:'₹15 if gross &gt;₹10,000 — Jun &amp; Dec only', esi:'Standard' },
   varanasi: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'Dilip Kumar Gupta — PERF INCEN ₹2,000; Kuldeep Yadav — HRA ₹2,792+Tel ₹500',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Dilip Kumar Gupta — PERF INCEN ₹2,000; Kuldeep Yadav — HRA ₹2,792+Tel ₹500',
     pt:'Uttar Pradesh — No PT levied', lwf:'Not applicable in UP', esi:'Standard' },
   vizag: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'4 employees with PERF INCEN ₹2,000–4,000 (Rayi Giri, Vangalapudi Rajkumar, Chitturi Vijay Kumar, Potnuru Dilip Kumar)',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'4 employees with PERF INCEN ₹2,000–4,000 (Rayi Giri, Vangalapudi Rajkumar, Chitturi Vijay Kumar, Potnuru Dilip Kumar)',
     pt:'Andhra Pradesh — ₹0–200 by slab', lwf:'₹30, no wage limit — December only', esi:'Standard' },
   necegate: { salCal:'Actual calendar days (28/30/31) — differs from BHS Calicut\'s fixed 26', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'None currently',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'<b>Manual entry required</b> — same Calicut rolling-data issue', lwf:'₹50, no wage limit — every month', esi:'Standard' },
   pbb21: { salCal:'Actual calendar days (28/30/31), per-employee area', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'Amit Kumar Sahoo (BHUB-001) — PERF INCEN ₹2,000; Sunil Kumar Prajapati (AMRT-0036) — PERF INCEN ₹2,000',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Amit Kumar Sahoo (BHUB-001) — PERF INCEN ₹2,000; Sunil Kumar Prajapati (AMRT-0036) — PERF INCEN ₹2,000',
     pt:'Multi-state — resolved per employee location', lwf:'Resolved per employee location', esi:'Standard.<br><i>Manual Performance Incentive section visible for this project.</i>' },
   jammu: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'None currently',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'<b>Unconfirmed</b> — no J&amp;K PT data yet', lwf:'<b>Unconfirmed</b> — no J&amp;K LWF data yet', esi:'Standard.<br><i>Manual Performance Incentive section visible for this project.</i>' },
   bhsitcvjwd: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'5 employees: 3 with HRA+Tel stacked, Neeraj Kumar (full fixed wage + PERF INCEN ₹7,500), Suneel Kumar (HRA/Tel/ProjAllow + PERF INCEN ₹4,000)',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'5 employees, all full fixed wage (Basic/VDA/HRA): Neeraj Kumar (+PERF INCEN ₹7,500), Anil, Krishna Kumar Gaur, Gorrela Ashok (+Telephone ₹500 each), Suneel Kumar (+ProjAllow ₹9,943 + Relocation Allowance ₹4,000)',
     pt:'Andhra Pradesh — ₹0–200 by slab', lwf:'₹30, no wage limit — December only', esi:'Standard' },
   bhspune: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'IF(TE&gt;15000, 1800, prorated using UNCAPPED Pay Days)', fair:'4 employees: Deepak Patidar &amp; Saurabh Gupta (month-varying HRA/allowances), Venkatesh Nayak (PERF INCEN ₹3,649), Kiran Shankar Desai (PERF INCEN from Jun-26 + one-time ₹14,000 arrear)',
+    pf:'IF(TE&gt;25000, 3000, prorated using UNCAPPED Pay Days)', fair:'4 employees: Deepak Patidar &amp; Saurabh Gupta (month-varying HRA/allowances), Venkatesh Nayak (PERF INCEN ₹3,649), Kiran Shankar Desai (PERF INCEN from Jun-26 + one-time ₹14,000 arrear)',
     pt:'Maharashtra — ₹200/mo if gross &gt;₹10,000', lwf:'₹25 if gross &gt;₹3,000 — Jun &amp; Dec only', esi:'Standard' },
   ambulift: { salCal:'Fixed 26 for Jamnagar/Kanpur; actual days for others', ot:'Fixed 26-day divisor always',
     pf:'Standard capped formula (Siddant Paul override: 12% of actual, no cap)', fair:'Vanol Ajay &amp; Pawan Singh — reliever pay split by role coverage',
@@ -1151,13 +1160,13 @@ const PROJECT_CONDITIONS = {
     pf:'Standard capped formula (Siddant Paul override: 12% of actual, no cap)', fair:'None currently',
     pt:'<b>Manual entry for Calicut</b>; resolved per state elsewhere. <b>Chennai PT=₹0</b> for this project specifically', lwf:'Resolved per employee\'s own state', esi:'Standard.<br><i>Attendant/Helper = Unskilled (project-specific rule).</i>' },
   pbb17: { salCal:'Fixed 26 for Goa; actual days for others (incl. Pune)', ot:'Fixed 26-day divisor always',
-    pf:'Standard capped formula', fair:'None currently',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'Resolved per employee\'s own state', lwf:'Resolved per employee\'s own state', esi:'Standard' },
   pbb60: { salCal:'Fixed 26 for Calicut &amp; Goa; actual days for others', ot:'Chennai: own Sal Cal Days. Every other location: fixed 26',
-    pf:'Standard capped formula', fair:'Laxmidhar Nayak &amp; Arijit Bhattacharjee (Kolkata) — HRA stacked',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Laxmidhar Nayak &amp; Arijit Bhattacharjee (Kolkata) — HRA stacked',
     pt:'<b>Manual entry for Calicut</b>; resolved per state elsewhere', lwf:'Resolved per employee\'s own state', esi:'Standard' },
   custom: { salCal:'Actual calendar days (28/30/31) — adjust manually', ot:'Own Sal Cal Days',
-    pf:'Standard capped formula', fair:'None — configure manually',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'None — configure manually',
     pt:'Maharashtra (default) — adjust manually if needed', lwf:'Maharashtra rule applies by default', esi:'Standard' }
 };
 
@@ -1672,26 +1681,34 @@ function computeRegister(employees, cfg){
     const pfDaysInMonth = daysInMonthFromLabel(cfg.monthYear);
     const isChennaiPfRule = cfg.pfChennaiFormula || is60pbbChennai;
     const pfPayDays = cfg.pfUncappedPayDays ? payDays : ((payDays > salCal) ? salCal : payDays);
+    // PF revision (govt guideline, effective per revised CLC rates): PF wage ceiling raised from
+    // ₹15,000 to ₹25,000. Default rule: IF (Basic+VDA) >= 25000, PF = ROUND(25000*12%) = 3000;
+    // ELSE PF = ROUND((Basic+VDA) * 12%) — based on the already-prorated actual Basic+VDA, not a
+    // further-reprorated ceiling. Project-specific variants keep their own established base/cap
+    // structure, with the ceiling figure updated from 15000/1800 to 25000/3000 throughout.
+    const bPlusVda = basic + vda;
     const pf = PF_ON_ACTUAL_OVERRIDES[e.code]
       ? Math.round(teWoOt*0.12)
       : cfg.pfActualThresholdFormula
-      ? Math.round(te>=15000 ? 1800 : te*0.12)
+      ? Math.round(te>=25000 ? 3000 : te*0.12)
       : (cfg.pfCalicutFormula || isNagpurSiteIncharge)
-      ? (teWoOt<15000 ? Math.round((15000*0.12)/salCal*pfPayDays) : 1800)
+      ? (teWoOt<25000 ? Math.round((25000*0.12)/salCal*pfPayDays) : 3000)
       : cfg.pfPuneFormula
-      ? (te>15000 ? 1800 : Math.min(Math.round((15000*0.12)/salCal*payDays), 1800))
+      ? (te>25000 ? 3000 : Math.min(Math.round((25000*0.12)/salCal*payDays), 3000))
       : isChennaiPfRule
-      ? Math.min(Math.round((15000*0.12)/pfDaysInMonth*payDays), 1800)
+      ? Math.min(Math.round((25000*0.12)/pfDaysInMonth*payDays), 3000)
       : cfg.pfUncappedPayDays
-      ? Math.min(Math.round((15000*0.12)/salCal*pfPayDays), 1800)
-      : Math.round((15000*0.12)/salCal*pfPayDays);
+      ? Math.min(Math.round((25000*0.12)/salCal*pfPayDays), 3000)
+      : Math.round(bPlusVda>=25000 ? 25000*0.12 : bPlusVda*0.12);
     const pfEarn = cfg.pfActualThresholdFormula
-      ? Math.round(te>=15000 ? 15000 : te)
+      ? Math.round(te>=25000 ? 25000 : te)
       : isChennaiPfRule
-      ? Math.min(Math.round(15000/pfDaysInMonth*payDays), 15000)
+      ? Math.min(Math.round(25000/pfDaysInMonth*payDays), 25000)
       : cfg.pfUncappedPayDays
-      ? Math.min(Math.round(15000/salCal*pfPayDays), 15000)
-      : Math.round(15000/salCal*pfPayDays);
+      ? Math.min(Math.round(25000/salCal*pfPayDays), 25000)
+      : (cfg.pfCalicutFormula || isNagpurSiteIncharge || cfg.pfPuneFormula)
+      ? Math.min(Math.round(25000/salCal*pfPayDays), 25000)
+      : Math.min(bPlusVda, 25000);
     const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
     const effectiveState = cfg.perEmployeeZone ? (stateForLocation(e.location) || cfg.state) : cfg.state;
     const ptRule = PT_SLABS[effectiveState];
