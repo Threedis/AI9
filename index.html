@@ -672,11 +672,17 @@ const LOCATION_MAP = [
 
 /* Looks up a city's CLC Area from LOCATION_MAP (case-insensitive, partial match on "/" alternatives).
    Falls back to Area C ("All other cities") if not found. */
+/* Spelling-tolerant normaliser: lowercase, letters only, repeated letters collapsed
+   (so 'Silliguri', 'SILIGURI ', 'Siliguri.' all match 'Siliguri'). */
+function normLoc(s){
+  return String(s||'').toLowerCase().replace(/[^a-z]/g,'').replace(/(.)\1+/g,'$1');
+}
 function areaForLocation(city){
   if(!city) return 'C';
-  const c = String(city).trim().toLowerCase();
+  const c = normLoc(city);
+  if(!c) return 'C';
   const hit = LOCATION_MAP.find(([name])=>{
-    const parts = name.toLowerCase().split('/').map(s=>s.trim());
+    const parts = name.split('/').map(normLoc).filter(Boolean);
     return parts.some(p => p===c || c.includes(p) || p.includes(c));
   });
   return hit ? hit[1] : 'C';
@@ -815,7 +821,9 @@ function isMay26OrLater(monthLabel){
 /* Fixed LOI-based fair-wage overrides — employees paid per their Letter of Intent, not MW/CLC/TN rates.
    Sal Cal Days = 26, Pay Days = PR Days only, per the agreed rule for these employees. */
 const FAIR_WAGE_OVERRIDES = {
-  'PBBAD22': { name:'Bhaskar Vootla', basic:21200, vda:0, hra:10600, telephone:1000, mgtAllow:7200, salCal:26, payDaysMode:'pr_only' },
+  'PBBAD22': { name:'Bhaskar Vootla', basic:21200, vda:0, hra:10600, telephone:1000, salCal:26, payDaysMode:'pr_only',
+    // Revised Annexure WEF 17-Sep-2026 (applied from Oct-26 payroll): Mgmt Allowance 7200 -> 6394 (Sub Total 40000 -> 39194)
+    mgtAllow: (m) => isOct26OrLater(m) ? 6394 : 7200 },
   'BHS-S30': { name:'Nischal Shantilal Patel', salCal:26, payDaysMode:'pr_only',
     // Revised salary structure effective May-26 onward
     basic: (monthLabel) => isMay26OrLater(monthLabel) ? 16562 : 26208,
@@ -825,7 +833,14 @@ const FAIR_WAGE_OVERRIDES = {
     projAllow: (monthLabel) => isMay26OrLater(monthLabel) ? 5153 : 0
   },
   // 60 PBB Srinagar — fair wage employee (Sal Cal/Pay Days follow the normal Srinagar site rule, not fixed)
-  'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra:4800, telephone:1000 },
+  // Revised Annexure WEF 17-Sep-2026 (applied from Oct-26 payroll): HRA 4800 -> 3500
+  'PBBS601': { name:'Javid Ahmad Mir', basic:26000, vda:0, hra: (m) => isOct26OrLater(m) ? 3500 : 4800, telephone:1000 },
+  // 60 PBB Kolkata — Laxmidhar Nayak (Site Incharge). Revised Annexure WEF 17-Sep-2026 (applied from Oct-26 payroll):
+  // fixed Basic 18018 + VDA 10426 + HRA 3256 (=31700). Before Oct-26: revised CLC Basic/VDA + HRA 2814 (=31700).
+  'PBBK601': { name:'Laxmidhar Nayak',
+    basic: 18018,
+    vda: (m) => isOct26OrLater(m) ? 10426 : 10868,
+    hra: (m) => isOct26OrLater(m) ? 3256 : 2814 },
   // BHS ITC Vijayawada
   'HO-0254': { name:'Neeraj Kumar', basic:20500, vda:0, hra:10250, telephone:500, projAllow:9790, perfIncen:7500 },
   // BHS ITC Vijayawada — 4 fair wage employees revised per signed LOI/Annexure A, full fixed
@@ -947,6 +962,13 @@ const MANUAL_ARREAR_OVERRIDES = {
   }
 };
 
+const isOct26OrLater = (m) => {
+  const mn = monthNumberFromLabel(m);
+  const yr = (String(m||'').match(/(\d{2,4})$/)||[])[1];
+  if(mn===null || !yr) return false;
+  const y = yr.length===2 ? 2000+Number(yr) : Number(yr);
+  return y>2026 || (y===2026 && mn>=10);
+};
 const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   'NEC002': { name:'Munna Mondal', hraFixed:326 },
   'BHS-HR08': { name:'Yadav Sanjaykumar', telephone:500,
@@ -975,7 +997,7 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   // BHS Bhubaneshwar
   'BHS-B001': { name:'Debasis Rout', perfIncen:4000 },
   // BHS Calicut — Rijith gets 4000 (project rate) + 1000 (monthly approval, Kamran) instead of the ₹2000 default
-  'BHS-CAL05': { name:'Rijith T', hra:298, perfIncen:5000 },
+  'BHS-CAL05': { name:'Rijith T', hra: (m) => isOct26OrLater(m) ? 0 : 298, perfIncen:5000 }, // HRA revised to 0 from Oct-26
   // BHS Raipur
   'BHS-R001':  { name:'Dharam Lal Sahu', hra: (monthLabel) => {
     const mn = monthNumberFromLabel(monthLabel);
@@ -990,7 +1012,7 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   'BHS-R005':  { name:'Lokesh Ojha', perfIncen:2000 },
   // BHS Varanasi
   'BHSVNS-0005': { name:'Dilip Kumar Gupta', perfIncen:2000 },
-  'BHSVNS-0012': { name:'Kuldeep Yadav', hra:1084, telephone:500 },
+  'BHSVNS-0012': { name:'Kuldeep Yadav', hra: (m) => isOct26OrLater(m) ? 1500 : 1084, telephone:500 }, // HRA revised to 1500 from Oct-26
   // BHS Vizag
   'BHSITC_VI04': { name:'Rayi Giri', perfIncen:2000 },
   'BHS-V003':  { name:'Vangalapudi Rajkumar', perfIncen:2000 },
@@ -999,22 +1021,20 @@ const ADDITIONAL_ALLOWANCE_OVERRIDES = {
   // 21 PBB
   'BHUB-001':  { name:'Amit Kumar Sahoo', perfIncen:2000 },
   // 60 PBB Kolkata — fair wage employees (HRA stacked on top of normal MW Basic/VDA)
-  // Laxmidhar Nayak (PBBK601) moved to FAIR_WAGE_OVERRIDES — see above (full fixed Basic/VDA/HRA, revised)
   'PBBK602': { name:'Arijit Bhattacharjee', hra:9506 },
   // 60 PBB Kolkata — Laxmidhar Nayak (Supervisor → Highly Skilled): revised CLC Basic/VDA + HRA 2814
-  'PBBK601': { name:'Laxmidhar Nayak', hra:2814 },
   // BHS ITC Vijayawada — revised CLC Basic/VDA + HRA/Telephone (Krishna Kumar Gaur & Suneel Kumar stay in FAIR_WAGE_OVERRIDES)
   'BHSITC_V17': { name:'Gorrela Ashok', hra:1576, telephone:500 },
   'BHSITC_V18': { name:'Anil', hra:90, telephone:500 },
   // BHS O&M Pune
   'BHS-PUN07':  { name:'Deepak Patidar', // Site Incharge
-    hra: (m) => isMay26OrLater(m) ? 4651 : 4556,
+    hra: (m) => isOct26OrLater(m) ? 5093 : (isMay26OrLater(m) ? 4651 : 4556), // Oct-26 revision
     perfIncen: 5000,
     telephone: (m) => isMay26OrLater(m) ? 500 : 0,
     projAllow: (m) => isMay26OrLater(m) ? 4556 : 0
   },
   'BHS-PUN35':  { name:'Saurabh Gupta', // Sr. Engineer
-    hra: (m) => isMay26OrLater(m) ? 12811 : 9883,
+    hra: (m) => isOct26OrLater(m) ? 13253 : (isMay26OrLater(m) ? 12811 : 9883), // Oct-26 revision
     telephone: (m) => isMay26OrLater(m) ? 500 : 1000,
     projAllow: (m) => isMay26OrLater(m) ? 5000 : 2390,
     retention: 2000
@@ -1061,7 +1081,11 @@ const STATE_FOR_LOCATION = {
 };
 function stateForLocation(city){
   if(!city) return null;
-  return STATE_FOR_LOCATION[String(city).trim().toLowerCase()] || null;
+  const direct = STATE_FOR_LOCATION[String(city).trim().toLowerCase()];
+  if(direct) return direct;
+  const n = normLoc(city);
+  const k = Object.keys(STATE_FOR_LOCATION).find(key => normLoc(key) === n);
+  return k ? STATE_FOR_LOCATION[k] : null;
 }
 
 const PROJECT_PRESETS = {
@@ -1163,7 +1187,7 @@ const PROJECT_CONDITIONS = {
     pf:'Standard capped formula (₹25,000 ceiling)', fair:'None currently',
     pt:'Resolved per employee\'s own state', lwf:'Resolved per employee\'s own state', esi:'Standard' },
   pbb60: { salCal:'Fixed 26 for Calicut &amp; Goa; actual days for others', ot:'Chennai: own Sal Cal Days. Every other location: fixed 26',
-    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Laxmidhar Nayak &amp; Arijit Bhattacharjee (Kolkata) — HRA stacked',
+    pf:'Standard capped formula (₹25,000 ceiling)', fair:'Laxmidhar Nayak (Kolkata) — fixed Basic/VDA/HRA from Oct-26; Arijit Bhattacharjee — HRA stacked; Javid Ahmad Mir (Srinagar) — fixed wage, HRA 3500 from Oct-26',
     pt:'<b>Manual entry for Calicut</b>; resolved per state elsewhere', lwf:'Resolved per employee\'s own state', esi:'Standard' },
   custom: { salCal:'Actual calendar days (28/30/31) — adjust manually', ot:'Own Sal Cal Days',
     pf:'Standard capped formula (₹25,000 ceiling)', fair:'None — configure manually',
