@@ -731,7 +731,9 @@ const PT_SLABS = {
   Maharashtra: { note:'₹0 up to ₹7,500; ₹175 (₹7,501–10,000); ₹200 above ₹10,001 (₹300 in February)', calc: (te,annual,monthLabel) => { const feb = monthNumberFromLabel(monthLabel)===2; return te>10000?(feb?300:200):(te>7500?175:0); } },
   Punjab:      { note:'New Regime: ₹0 if annual income (Total Earning(Th) × 12) ≤ ₹3,00,000; ₹200/month if above (AY 2025-26)', calc: (te,annual) => annual>300000?200:0 },
   Gujarat:     { note:'₹0 up to ₹12,000; ₹200/month above ₹12,000', calc: te => te>12000?200:0 },
-  'West Bengal': { note:'₹0 up to ₹10,000; ₹110/130/150/200 by slab above', calc: te => te>40000?200:(te>25000?150:(te>15000?130:(te>10000?110:0))) },
+  'West Bengal': { note:'From Oct-26 (Gazette Notification 1407-F.T., 18-Aug-2026): ₹0 up to ₹20,000; ₹100 (₹20,001–30,000); ₹140 (₹30,001–50,000); ₹170 (₹50,001–1,00,000); ₹208 above ₹1,00,000. Up to Sep-26: ₹0 up to ₹10,000; ₹110/130/150/200 by slab above', calc: (te,annual,monthLabel) => isOct26OrLater(monthLabel)
+      ? (te>100000?208:(te>50000?170:(te>30000?140:(te>20000?100:0))))
+      : (te>40000?200:(te>25000?150:(te>15000?130:(te>10000?110:0)))) },
   'Tamil Nadu': { note:'₹0 up to ₹21,000; ₹30/71/155/171/208 by slab above (official monthly rate — remitted half-yearly by the state, but deducted monthly)', calc: te => te>75000?208:(te>60000?171:(te>45000?155:(te>30000?71:(te>21000?30:0)))) },
   Haryana:     { note:'No Professional Tax levied in Haryana', calc: ()=>0 },
   Karnataka:   { note:'₹0 up to ₹24,999; ₹200 above ₹25,000 (₹300 in February)', calc: (te,annual,monthLabel) => { const feb = monthNumberFromLabel(monthLabel)===2; return te>=25000?(feb?300:200):0; } },
@@ -1137,7 +1139,7 @@ const PROJECT_CONDITIONS = {
     pt:'Tamil Nadu — ₹0 up to ₹21,000; ₹30–208 by slab (official monthly rate, remitted half-yearly). <b>PT=₹0 for Chennai in every project</b> (global exemption)', lwf:'₹20 if gross &gt;₹15,000 — December only', esi:'Standard. Uses TN wage rates, not CLC' },
   kolkata: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
     pf:'Standard capped formula (₹25,000 ceiling)', fair:'Munna Mondal (NEC002) — flat HRA ₹742 (not prorated)',
-    pt:'West Bengal — ₹0–200 by slab', lwf:'₹3 if gross &gt;₹1,600 — Jun &amp; Dec only', esi:'Standard' },
+    pt:'West Bengal — revised slabs from Oct-26: ₹0 up to ₹20,000; ₹100 / ₹140 / ₹170 / ₹208 by slab above', lwf:'₹3 if gross &gt;₹1,600 — Jun &amp; Dec only', esi:'Standard' },
   rajkot: { salCal:'Actual calendar days (28/30/31)', ot:'Own Sal Cal Days',
     pf:'Standard capped formula (₹25,000 ceiling)', fair:'Yadav Sanjaykumar (BHS-HR08) — HRA/ProjAllow revised May-26; Chavda Kaushal (BHS-HR22) — PERF INCEN ₹2,000',
     pt:'Gujarat — ₹0 up to ₹12,000, else ₹200/mo', lwf:'₹6, no wage limit — Jun &amp; Dec only', esi:'Standard' },
@@ -1175,7 +1177,7 @@ const PROJECT_CONDITIONS = {
     pf:'Standard capped formula (₹25,000 ceiling)', fair:'5 employees, all full fixed wage (Basic/VDA/HRA): Neeraj Kumar (+PERF INCEN ₹7,500), Anil, Krishna Kumar Gaur, Gorrela Ashok (+Telephone ₹500 each), Suneel Kumar (+ProjAllow ₹9,943 + Relocation Allowance ₹4,000)',
     pt:'Andhra Pradesh — ₹0–200 by slab', lwf:'₹30, no wage limit — December only', esi:'Standard' },
   bhspune: { salCal:'Fixed 26 days', ot:'Own Sal Cal Days (26)',
-    pf:'IF(TE&gt;25000, 3000, prorated using UNCAPPED Pay Days)', fair:'4 employees: Deepak Patidar &amp; Saurabh Gupta (month-varying HRA/allowances), Venkatesh Nayak (PERF INCEN ₹3,649), Kiran Shankar Desai (PERF INCEN from Jun-26 + one-time ₹14,000 arrear)',
+    pf:'ROUND((Basic(Th)+VDA(Th)) × 12% ÷ Sal Cal Days × Pay Days), capped at ₹3,000 (Pay Days uncapped)', fair:'4 employees: Deepak Patidar &amp; Saurabh Gupta (month-varying HRA/allowances), Venkatesh Nayak (PERF INCEN ₹3,649), Kiran Shankar Desai (PERF INCEN from Jun-26 + one-time ₹14,000 arrear)',
     pt:'Maharashtra — ₹200/mo if gross &gt;₹10,000', lwf:'₹25 if gross &gt;₹3,000 — Jun &amp; Dec only', esi:'Standard' },
   ambulift: { salCal:'Fixed 26 for Jamnagar/Kanpur; actual days for others', ot:'Fixed 26-day divisor always',
     pf:'Standard capped formula (Siddant Paul override: 12% of actual, no cap)', fair:'Vanol Ajay &amp; Pawan Singh — reliever pay split by role coverage',
@@ -1718,7 +1720,7 @@ function computeRegister(employees, cfg){
       : (cfg.pfCalicutFormula || isNagpurSiteIncharge)
       ? (teWoOt<25000 ? Math.round((25000*0.12)/salCal*pfPayDays) : 3000)
       : cfg.pfPuneFormula
-      ? (te>25000 ? 3000 : Math.min(Math.round((25000*0.12)/salCal*payDays), 3000))
+      ? Math.min(Math.round(((basicTh+vdaTh)*0.12)/salCal*payDays), 3000) // BHS Pune: ROUND((Basic(Th)+VDA(Th)) x 12% / Sal Cal Days x Pay Days), cap 3000
       : isChennaiPfRule
       ? Math.min(Math.round((25000*0.12)/pfDaysInMonth*payDays), 3000)
       : cfg.pfUncappedPayDays
@@ -1730,7 +1732,7 @@ function computeRegister(employees, cfg){
       ? Math.min(Math.round(25000/pfDaysInMonth*payDays), 25000)
       : cfg.pfUncappedPayDays
       ? Math.min(Math.round(25000/salCal*pfPayDays), 25000)
-      : (cfg.pfCalicutFormula || isNagpurSiteIncharge || cfg.pfPuneFormula)
+      : (cfg.pfCalicutFormula || isNagpurSiteIncharge)
       ? Math.min(Math.round(25000/salCal*pfPayDays), 25000)
       : Math.min(bPlusVda, 25000);
     const esi = teTh>21000 ? 0 : Math.ceil(te*0.0075);
@@ -2025,7 +2027,10 @@ const PTAX_TABLE = [
     ['Upto 15,000','Nil','Nil'],['15,001 – 20,000','150','150'],['20,001 & above','200','200']]},
   {state:'Tripura', location:'All location', slabs:[
     ['Upto 7,500','NIL','NIL'],['7,501 – 15,000','1800','150'],['Above 15,001','2496','208']]},
-  {state:'West Bengal', location:'All location', slabs:[
+  {state:'West Bengal (from 01-Oct-2026)', location:'All location', slabs:[
+    ['Upto 20,000','NIL','NIL'],['20,001 – 30,000','100','100'],
+    ['30,001 – 50,000','140','140'],['50,001 – 1,00,000','170','170'],['1,00,001 & above','208','208']]},
+  {state:'West Bengal (up to Sep-2026)', location:'All location', slabs:[
     ['Upto 10,000','NIL','NIL'],['10,001 – 15,000','110','110'],
     ['15,001 – 25,000','130','130'],['25,001 – 40,000','150','150'],['40,001 & above','200','200']]},
 ];
